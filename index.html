@@ -769,7 +769,7 @@ function renderSubtasks(t) {
         html += '<div class="file-links-label">\uD83D\uDD17 File Links <span style="font-weight:400;font-size:10px;color:var(--t3);text-transform:none">(Google Drive, Dropbox, etc.)</span></div>';
         var links = s.links || [];
         links.forEach(function(link, idx) {
-          var displayName = link.name || link.url.replace(/https?:\\/\\//, "").slice(0, 40);
+          var displayName = link.name || link.url.replace(/https?:\/\//, "").slice(0, 40);
           html += '<div class="file-link-item">';
           html += '<a class="file-link-btn" href="' + esc(link.url) + '" target="_blank" rel="noopener">\uD83D\uDCC4 ' + esc(displayName) + '</a>';
           html += '<button class="file-link-remove" onclick="removeFileLink(\'' + t.id + '\',\'' + s.id + '\',' + idx + ')" title="Remove link">\u00D7</button>';
