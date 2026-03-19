@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opsdeck</title>
+<title>Pulsqr</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -238,6 +238,32 @@
   .coming-soon .feature-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--t2); }
   .coming-soon .feature-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 
+
+  /* Subtask detail panel — work notes & file links */
+  .sub-detail { padding: 8px 0 8px 30px; border-bottom: 0.5px solid var(--border); }
+  .sub-detail-toggle { font-size: 11px; color: var(--accent); cursor: pointer; background: none; border: none; font-weight: 500; padding: 2px 0; transition: color 0.15s; }
+  .sub-detail-toggle:hover { color: var(--accent-h); }
+  .sub-detail-body { margin-top: 8px; }
+  .work-notes-label { font-size: 11px; font-weight: 600; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .work-notes-area { width: 100%; min-height: 60px; padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; font-family: 'Inter', sans-serif; outline: none; background: var(--surface-solid); resize: vertical; line-height: 1.5; color: var(--t1); }
+  .work-notes-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .work-notes-display { font-size: 13px; color: var(--t1); line-height: 1.6; white-space: pre-wrap; word-break: break-word; background: var(--surface-solid); border-radius: var(--r-sm); padding: 8px 10px; border: 0.5px solid var(--border); margin-top: 4px; }
+  .work-notes-empty { font-size: 12px; color: var(--t3); font-style: italic; margin-top: 4px; }
+  .file-links-section { margin-top: 10px; }
+  .file-links-label { font-size: 11px; font-weight: 600; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .file-link-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .file-link-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-bg); text-decoration: none; border: none; cursor: pointer; transition: all 0.15s; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-link-btn:hover { background: rgba(0,122,255,0.15); }
+  .file-link-remove { background: none; border: none; color: var(--t3); cursor: pointer; font-size: 14px; padding: 0 2px; opacity: 0.4; transition: all 0.15s; }
+  .file-link-remove:hover { color: var(--red); opacity: 1; }
+  .add-link-row { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+  .add-link-row input { flex: 1; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-s); font-size: 12px; outline: none; background: var(--surface-solid); }
+  .add-link-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .add-link-row input::placeholder { font-size: 11px; }
+  .btn-add-link { padding: 5px 10px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-save-notes { padding: 5px 12px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 6px; transition: all 0.15s; }
+  .btn-save-notes:hover { background: var(--accent-h); }
+  .sub-detail-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
   @media (max-width: 600px) {
     .header { padding: 20px 16px 18px; }
     .container { padding: 0 16px; }
@@ -268,6 +294,8 @@ let state = {
   showImport: false,
   expandedTasks: {},
   editingSubtask: null,
+  expandedSubtasks: {},
+  editingNotes: null,
   addingSubTo: null,
   activeTab: "tasks",
   showSettings: false,
@@ -512,8 +540,8 @@ function render() {
       '<div class="header-inner">' +
         '<div class="header-top">' +
           '<div>' +
-            '<h1>Opsdeck</h1>' +
-            '<p class="subtitle">Operations command deck</p>' +
+            '<h1>Pulsqr</h1>' +
+            '<p class="subtitle">Your operations pulse</p>' +
           '</div>' +
           '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
             '<span class="today-bar">\uD83D\uDCC5 ' + new Date().toLocaleDateString("en-GB", {weekday:"long", day:"2-digit", month:"long", year:"numeric"}) + '</span>' +
@@ -706,6 +734,57 @@ function renderSubtasks(t) {
         (s.completed && s.completedDate ? '<span class="subtask-completed-date">\u2713 ' + fmtDate(s.completedDate) + '</span>' : '') +
         '<button class="btn-delete-sub" onclick="deleteSub(\'' + t.id + '\',\'' + s.id + '\')" title="Delete subtask">\u00D7</button>' +
       '</div>';
+
+      // Detail panel (work notes + file links)
+      var isExpSub = state.expandedSubtasks[s.id];
+      var noteCount = (s.workNotes || '').length > 0 ? 1 : 0;
+      var linkCount = (s.links || []).length;
+      var detailBadge = (noteCount + linkCount) > 0 ? ' (' + (noteCount > 0 ? '\u270D' : '') + (linkCount > 0 ? linkCount + ' \uD83D\uDD17' : '') + ')' : '';
+
+      html += '<div class="sub-detail">';
+      html += '<button class="sub-detail-toggle" onclick="toggleSubDetail(\'' + s.id + '\')">' + (isExpSub ? '\u25BC Hide details' : '\u25B6 Details' + detailBadge) + '</button>';
+
+      if (isExpSub) {
+        html += '<div class="sub-detail-body">';
+
+        // Work notes
+        html += '<div class="work-notes-label">\uD83D\uDCDD Work Notes</div>';
+        if (state.editingNotes === s.id) {
+          html += '<textarea class="work-notes-area" id="workNotes_' + s.id + '" placeholder="Describe what was done to complete this subtask...">' + esc(s.workNotes || '') + '</textarea>';
+          html += '<div class="sub-detail-actions">';
+          html += '<button class="btn-save-notes" onclick="saveWorkNotes(\'' + t.id + '\',\'' + s.id + '\')">Save Notes</button>';
+          html += '<button class="btn-outline" style="padding:5px 10px;font-size:12px" onclick="cancelEditNotes()">Cancel</button>';
+          html += '</div>';
+        } else {
+          if (s.workNotes) {
+            html += '<div class="work-notes-display">' + esc(s.workNotes) + '</div>';
+          } else {
+            html += '<div class="work-notes-empty">No notes yet.</div>';
+          }
+          html += '<button class="sub-detail-toggle" style="margin-top:4px" onclick="startEditNotes(\'' + s.id + '\')">' + (s.workNotes ? '\u270F Edit notes' : '+ Add notes') + '</button>';
+        }
+
+        // File links
+        html += '<div class="file-links-section">';
+        html += '<div class="file-links-label">\uD83D\uDD17 File Links <span style="font-weight:400;font-size:10px;color:var(--t3);text-transform:none">(Google Drive, Dropbox, etc.)</span></div>';
+        var links = s.links || [];
+        links.forEach(function(link, idx) {
+          var displayName = link.name || link.url.replace(/https?:\\/\\//, "").slice(0, 40);
+          html += '<div class="file-link-item">';
+          html += '<a class="file-link-btn" href="' + esc(link.url) + '" target="_blank" rel="noopener">\uD83D\uDCC4 ' + esc(displayName) + '</a>';
+          html += '<button class="file-link-remove" onclick="removeFileLink(\'' + t.id + '\',\'' + s.id + '\',' + idx + ')" title="Remove link">\u00D7</button>';
+          html += '</div>';
+        });
+        html += '<div class="add-link-row">';
+        html += '<input type="text" id="newLink_' + s.id + '" placeholder="Paste file URL (Google Drive, Dropbox...)" onkeydown="if(event.key===\'Enter\')addFileLink(\'' + t.id + '\',\'' + s.id + '\')">';
+        html += '<input type="text" id="newLinkName_' + s.id + '" placeholder="Label (optional)" style="max-width:120px" onkeydown="if(event.key===\'Enter\')addFileLink(\'' + t.id + '\',\'' + s.id + '\')">';
+        html += '<button class="btn-add-link" onclick="addFileLink(\'' + t.id + '\',\'' + s.id + '\')">Add</button>';
+        html += '</div>';
+        html += '</div>'; // file-links-section
+
+        html += '</div>'; // sub-detail-body
+      }
+      html += '</div>'; // sub-detail
     }
   });
 
@@ -758,7 +837,7 @@ function renderSettingsModal() {
   return '<div class="modal-overlay" onclick="toggleSettings()">' +
     '<div class="settings-panel" onclick="event.stopPropagation()">' +
       '<h3>\u2699 Settings</h3>' +
-      '<p class="desc">Connect Opsdeck to Google Sheets for cloud sync. Your data will be accessible from any device.</p>' +
+      '<p class="desc">Connect Pulsqr to Google Sheets for cloud sync. Your data will be accessible from any device.</p>' +
 
       '<div class="settings-field">' +
         '<label>Google Apps Script URL</label>' +
@@ -778,7 +857,7 @@ function renderSettingsModal() {
         '<p><strong>Need help?</strong> Follow these steps:<br>' +
         '1. Create a Google Sheet<br>' +
         '2. Go to Extensions \u2192 Apps Script<br>' +
-        '3. Paste the Opsdeck script code (see setup guide)<br>' +
+        '3. Paste the Pulsqr script code (see setup guide)<br>' +
         '4. Deploy \u2192 New deployment \u2192 Web app \u2192 Anyone<br>' +
         '5. Copy the URL and paste it above</p>' +
       '</div>' +
@@ -836,6 +915,65 @@ function forceCloudPull() {
     var el2 = document.getElementById("settingsResult");
     if (el2) el2.innerHTML = '<div class="settings-status ok">Pulled ' + state.tasks.length + ' tasks from cloud.</div>';
   }, 2000);
+}
+
+
+/* ——— SUBTASK DETAIL ACTIONS ——— */
+function toggleSubDetail(subId) {
+  state.expandedSubtasks[subId] = !state.expandedSubtasks[subId];
+  render();
+}
+
+function startEditNotes(subId) {
+  state.editingNotes = subId;
+  render();
+  setTimeout(function() {
+    var el = document.getElementById("workNotes_" + subId);
+    if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  }, 50);
+}
+
+function cancelEditNotes() {
+  state.editingNotes = null;
+  render();
+}
+
+function saveWorkNotes(taskId, subId) {
+  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  if (!t) return;
+  var s = t.subtasks.find(function(x){ return x.id === subId; });
+  if (!s) return;
+  var el = document.getElementById("workNotes_" + subId);
+  s.workNotes = el ? el.value : (s.workNotes || '');
+  state.editingNotes = null;
+  save(); render();
+}
+
+function addFileLink(taskId, subId) {
+  var urlEl = document.getElementById("newLink_" + subId);
+  var nameEl = document.getElementById("newLinkName_" + subId);
+  if (!urlEl || !urlEl.value.trim()) return;
+  var url = urlEl.value.trim();
+  // Auto-add https if missing
+  if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+  var name = nameEl ? nameEl.value.trim() : '';
+
+  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  if (!t) return;
+  var s = t.subtasks.find(function(x){ return x.id === subId; });
+  if (!s) return;
+  if (!s.links) s.links = [];
+  s.links.push({ url: url, name: name || null, addedOn: todayStr() });
+  save(); render();
+}
+
+function removeFileLink(taskId, subId, idx) {
+  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  if (!t) return;
+  var s = t.subtasks.find(function(x){ return x.id === subId; });
+  if (!s || !s.links) return;
+  s.links.splice(idx, 1);
+  save(); render();
 }
 
 /* ——— ACTIONS ——— */
@@ -950,7 +1088,7 @@ function addSubtask(taskId) {
   var t = state.tasks.find(function(x){ return x.id === taskId; });
   if (!t) return;
   var agentVal = agentEl ? agentEl.value.trim().toUpperCase().slice(0,3) : null;
-  t.subtasks.push({ id: genId(), description: descEl.value.trim(), agent: agentVal || null, deadline: deadEl ? (deadEl.value || null) : null, deadlineHistory: [], completed: false, completedDate: null });
+  t.subtasks.push({ id: genId(), description: descEl.value.trim(), agent: agentVal || null, deadline: deadEl ? (deadEl.value || null) : null, deadlineHistory: [], workNotes: '', links: [], completed: false, completedDate: null });
   t.completed = false;
   t.endDate = null;
   state.addingSubTo = null;
