@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pulsqr</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#3d3f45">
+<title>TaskaDo</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -17,23 +20,27 @@
     --t1: #16171a;
     --t2: #5c5e66;
     --t3: #8b8d95;
-    --accent: #3b82f6;
-    --accent-h: #2563eb;
-    --accent-bg: rgba(59,130,246,0.1);
+    --accent: #e67e22;
+    --accent-h: #d35400;
+    --accent-bg: rgba(230,126,34,0.1);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.12);
     --green: #22c55e;
     --green-bg: rgba(34,197,94,0.12);
     --orange: #f59e0b;
     --orange-bg: rgba(245,158,11,0.12);
     --red: #ef4444;
     --red-bg: rgba(239,68,68,0.1);
+    --warn: #dc2626;
+    --warn-bg: rgba(220,38,38,0.1);
     --r: 10px;
     --r-lg: 14px;
     --r-sm: 7px;
     /* Header */
-    --header-bg: #1a1b1e;
-    --header-t1: #f0f1f5;
-    --header-t2: rgba(240,241,245,0.5);
-    --header-border: rgba(255,255,255,0.07);
+    --header-bg: #3d3f45;
+    --header-t1: #ffffff;
+    --header-t2: rgba(255,255,255,0.6);
+    --header-border: rgba(255,255,255,0.1);
     /* Task layer */
     --task-bg: #ecedf2;
     --task-border: rgba(0,0,0,0.06);
@@ -41,7 +48,7 @@
     --sub-panel: #d2d4da;
     --sub-card: #e0e2e8;
     --sub-border: rgba(0,0,0,0.05);
-    --sub-accent: rgba(59,130,246,0.45);
+    --sub-accent: rgba(230,126,34,0.45);
     --detail-bg: #d8dae0;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,15 +59,16 @@
   .header { background: var(--header-bg); padding: 0 32px; border-bottom: none; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
   .header-inner { max-width: 1400px; }
   .header-row { display: flex; align-items: center; min-height: 56px; gap: 16px; }
-  .header-brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+  .header-brand { display: flex; align-items: center; gap: 10px; margin-right: auto; flex-shrink: 0; }
+  .header-brand svg { flex-shrink: 0; }
   .header h1 { font-size: 20px; color: var(--header-t1); font-weight: 800; letter-spacing: -0.3px; }
   .header .subtitle { font-size: 11px; color: var(--header-t2); font-weight: 400; }
   .header-center { display: flex; align-items: center; gap: 16px; }
   .today-bar { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--header-t2); font-weight: 500; }
   .header-btns { display: flex; gap: 6px; align-items: center; margin-left: auto; }
 
-  .btn-outline { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--header-border); background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
-  .btn-outline:hover { background: rgba(255,255,255,0.14); color: #fff; }
+  .btn-outline { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--header-border); background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-size: 12px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .btn-outline:hover { background: rgba(255,255,255,0.16); color: #fff; }
   .btn-primary { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.15s; }
   .btn-primary:hover { background: var(--accent-h); }
 
@@ -73,7 +81,7 @@
   /* Sync status */
   .sync-status { display: flex; align-items: center; gap: 4px; font-size: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 500; padding: 3px 8px; border-radius: 6px; }
   .sync-status.connected { color: var(--green); background: rgba(48,209,88,0.15); }
-  .sync-status.syncing { color: var(--accent); background: rgba(10,132,255,0.15); }
+  .sync-status.syncing { color: var(--accent); background: rgba(230,126,34,0.15); }
   .sync-status.offline { color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06); }
   .sync-status.error { color: var(--red); background: rgba(255,69,58,0.15); }
   .sync-dot { width: 5px; height: 5px; border-radius: 50%; }
@@ -83,8 +91,8 @@
   .sync-dot.error { background: var(--red); }
   @keyframes pulse-sync { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
 
-  .btn-icon { padding: 5px 7px; border-radius: 6px; border: 1px solid var(--header-border); background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); font-size: 14px; cursor: pointer; transition: all 0.15s; line-height: 1; }
-  .btn-icon:hover { background: rgba(255,255,255,0.14); color: #fff; }
+  .btn-icon { padding: 5px 7px; border-radius: 6px; border: 1px solid var(--header-border); background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); font-size: 14px; cursor: pointer; transition: all 0.15s; line-height: 1; }
+  .btn-icon:hover { background: rgba(255,255,255,0.16); color: #fff; }
 
   /* Settings modal */
   .settings-panel { background: var(--surface-solid); border-radius: var(--r-lg); padding: 28px; max-width: 560px; width: 100%; box-shadow: var(--shadow-lg); }
@@ -93,7 +101,7 @@
   .settings-field { margin-bottom: 16px; }
   .settings-field label { font-size: 11px; font-weight: 600; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
   .settings-field input { width: 100%; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; background: var(--bg); }
-  .settings-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .settings-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .settings-actions { display: flex; gap: 8px; margin-top: 20px; }
   .settings-status { margin-top: 12px; padding: 10px 14px; border-radius: var(--r-sm); font-size: 13px; }
   .settings-status.ok { background: var(--green-bg); color: var(--green); }
@@ -120,9 +128,9 @@
   .filter-btn.active-medium { background: var(--orange-bg); color: var(--orange); font-weight: 600; }
   .filter-btn.active-low { background: var(--green-bg); color: var(--green); font-weight: 600; }
 
-  .add-bar { background: var(--task-bg); border-radius: var(--r); padding: 16px; border: 1px solid var(--accent); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; box-shadow: 0 0 0 3px rgba(10,132,255,0.08); }
+  .add-bar { background: var(--task-bg); border-radius: var(--r); padding: 16px; border: 1px solid var(--accent); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 16px; box-shadow: 0 0 0 3px rgba(230,126,34,0.08); }
   .add-bar input[type="text"] { flex: 1; min-width: 180px; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 14px; outline: none; background: var(--bg); transition: all 0.15s; }
-  .add-bar input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10,132,255,0.15); background: var(--task-bg); }
+  .add-bar input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); background: var(--task-bg); }
   .add-bar select { padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; background: var(--bg); }
   .btn-create { padding: 8px 20px; border-radius: var(--r-sm); border: none; background: var(--accent); color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }
   .btn-create:hover { background: var(--accent-h); }
@@ -141,7 +149,7 @@
   .task-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .task-title { font-size: 16px; font-weight: 700; color: var(--t1); letter-spacing: -0.2px; }
   .task-title.done { text-decoration: line-through; color: var(--t3); }
-  .task-title-input { font-size: 15px; font-weight: 600; border: 1px solid var(--accent); border-radius: 6px; padding: 2px 8px; outline: none; flex: 1; min-width: 150px; background: var(--bg); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .task-title-input { font-size: 15px; font-weight: 600; border: 1px solid var(--accent); border-radius: 6px; padding: 2px 8px; outline: none; flex: 1; min-width: 150px; background: var(--bg); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
 
   .prio-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; cursor: pointer; letter-spacing: 0.2px; text-transform: uppercase; border: none; transition: all 0.15s; }
   .prio-badge.high { background: var(--red-bg); color: var(--red); }
@@ -157,9 +165,9 @@
   .task-meta { display: flex; align-items: center; gap: 12px; margin-top: 5px; font-size: 12px; color: var(--t3); font-family: 'JetBrains Mono', monospace; flex-wrap: wrap; font-weight: 400; }
   .task-meta .green { color: var(--green); }
 
-  .reminder-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--orange); background: var(--orange-bg); padding: 2px 8px; border-radius: 100px; animation: pulse-remind 2s ease-in-out infinite; }
+  .reminder-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: #fff; background: var(--warn); padding: 2px 8px; border-radius: 100px; animation: pulse-remind 2s ease-in-out infinite; }
   @keyframes pulse-remind { 0%,100% { opacity: 1; } 50% { opacity: 0.65; } }
-  .sub-reminder { font-size: 11px; font-weight: 600; color: var(--orange); background: var(--orange-bg); padding: 1px 6px; border-radius: 100px; white-space: nowrap; }
+  .sub-reminder { font-size: 11px; font-weight: 600; color: var(--warn); background: var(--warn-bg); padding: 1px 6px; border-radius: 100px; white-space: nowrap; }
 
   .progress-wrap { margin-top: 6px; max-width: 240px; display: flex; align-items: center; gap: 8px; }
   .progress-bar { flex: 1; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.06); overflow: hidden; }
@@ -201,7 +209,7 @@
   .agent-badge { display: inline-flex; align-items: center; justify-content: center; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.3px; color: var(--accent); background: var(--accent-bg); }
   .sub-deadline { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--t1); background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 6px; }
   .sub-deadline.overdue { color: #fff; background: var(--red); font-weight: 600; }
-  .sub-reminder { font-size: 11px; font-weight: 600; color: #fff; background: var(--orange); padding: 2px 8px; border-radius: 6px; white-space: nowrap; animation: pulse-remind 2s ease-in-out infinite; }
+  .sub-reminder { font-size: 11px; font-weight: 600; color: #fff; background: var(--warn); padding: 2px 8px; border-radius: 6px; white-space: nowrap; animation: pulse-remind 2s ease-in-out infinite; }
   .sub-completed-chip { font-size: 11px; color: var(--green); font-family: 'JetBrains Mono', monospace; background: var(--green-bg); padding: 2px 8px; border-radius: 6px; }
   .deadline-history { display: inline-flex; gap: 3px; align-items: center; }
   .deadline-prev { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--t3); text-decoration: line-through; white-space: nowrap; background: var(--surface-sec); padding: 1px 5px; border-radius: 4px; }
@@ -222,7 +230,7 @@
   .detail-section { margin-top: 12px; }
   .detail-section-title { font-size: 10px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
   .work-notes-area { width: 100%; min-height: 80px; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; font-family: 'Inter', sans-serif; outline: none; background: var(--surface-solid); resize: vertical; line-height: 1.6; color: var(--t1); }
-  .work-notes-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .work-notes-area:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .work-notes-display { font-size: 13px; color: var(--t1); line-height: 1.6; white-space: pre-wrap; word-break: break-word; background: var(--surface-solid); border-radius: var(--r-sm); padding: 10px 12px; border: 1px solid var(--sub-border); box-shadow: inset 0 1px 2px rgba(0,0,0,0.03); }
   .file-link-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
   .file-link-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: var(--r-sm); font-size: 12px; font-weight: 500; color: var(--accent); background: var(--surface-solid); text-decoration: none; border: 1px solid rgba(0,122,255,0.2); cursor: pointer; transition: all 0.15s; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -231,7 +239,7 @@
   .file-link-remove:hover { color: var(--red); opacity: 1; }
   .add-link-row { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
   .add-link-row input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-s); font-size: 12px; outline: none; background: var(--surface-solid); }
-  .add-link-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .add-link-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .add-link-row input::placeholder { font-size: 11px; }
   .btn-add-link { padding: 6px 12px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .btn-save-notes { padding: 6px 14px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
@@ -240,12 +248,12 @@
 
   /* Edit row */
   .agent-input { width: 42px; padding: 3px 4px; border-radius: 6px; border: 1px solid var(--border-s); font-size: 11px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; text-align: center; outline: none; background: var(--bg); }
-  .agent-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .agent-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
 
   /* Add subtask row */
   .add-sub-row { display: flex; gap: 8px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
   .add-sub-row input[type="text"] { flex: 1; min-width: 140px; padding: 7px 10px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; outline: none; background: var(--surface-solid); }
-  .add-sub-row input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .add-sub-row input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .add-sub-row input[type="date"] { padding: 7px 10px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 12px; font-family: 'JetBrains Mono', monospace; background: var(--surface-solid); }
   .btn-add-sub { padding: 7px 14px; border-radius: var(--r-sm); border: none; background: var(--accent); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
   .btn-add-sub:hover { background: var(--accent-h); }
@@ -255,21 +263,21 @@
 
   .edit-row { display: flex; gap: 8px; flex: 1; align-items: center; flex-wrap: wrap; }
   .edit-row input[type="text"] { flex: 1; min-width: 140px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-s); font-size: 13px; outline: none; background: var(--surface-solid); }
-  .edit-row input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
+  .edit-row input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .edit-row input[type="date"] { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-s); font-size: 12px; font-family: 'JetBrains Mono', monospace; background: var(--surface-solid); }
   .btn-save-sm { padding: 5px 12px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 12px; cursor: pointer; font-weight: 600; }
 
   /* Tab bar */
-  .tab-bar { background: #26272b; border-bottom: none; padding: 0 32px; display: flex; gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .tab-bar { background: #4a4c52; border-bottom: none; padding: 0 32px; display: flex; gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
   .tab-bar::-webkit-scrollbar { display: none; }
-  .tab-item { position: relative; padding: 9px 20px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.5); cursor: pointer; white-space: nowrap; border: none; background: none; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
-  .tab-item:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.04); }
+  .tab-item { position: relative; padding: 9px 20px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.55); cursor: pointer; white-space: nowrap; border: none; background: none; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .tab-item:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.06); }
   .tab-item.active { color: #fff; font-weight: 600; }
-  .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+  .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 16px; right: 16px; height: 2.5px; background: var(--accent); border-radius: 2px 2px 0 0; }
   .tab-item .tab-icon { display: inline-flex; align-items: center; }
   .tab-item .tab-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 100px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
-  .tab-item.active .tab-badge { background: rgba(10,132,255,0.25); color: var(--accent); }
-  .tab-item .tab-soon { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 100px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.3px; }
+  .tab-item.active .tab-badge { background: rgba(230,126,34,0.25); color: var(--accent); }
+  .tab-item .tab-soon { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 100px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.3px; }
 
   /* Coming soon */
   .coming-soon { display: flex; flex-direction: column; align-items: flex-start; padding: 60px 0; }
@@ -288,9 +296,9 @@
   .modal label { font-size: 11px; font-weight: 600; color: var(--t2); display: block; text-transform: uppercase; letter-spacing: 0.5px; }
   .modal .url-row { display: flex; gap: 8px; margin-top: 6px; margin-bottom: 16px; }
   .modal .url-row input { flex: 1; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; background: var(--bg); }
-  .modal .url-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10,132,255,0.15); }
+  .modal .url-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .modal textarea { width: 100%; margin-top: 6px; padding: 8px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 12px; font-family: 'JetBrains Mono', monospace; resize: vertical; outline: none; background: var(--bg); }
-  .modal textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10,132,255,0.15); }
+  .modal textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .modal .btn-import-csv { margin-top: 10px; padding: 8px 16px; border-radius: var(--r-sm); border: none; background: var(--t1); color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }
   .modal .btn-import-csv:hover { background: #333; }
   .modal .error { margin-top: 10px; color: var(--red); font-size: 13px; }
@@ -304,7 +312,7 @@
   .settings-field { margin-bottom: 16px; }
   .settings-field label { font-size: 11px; font-weight: 600; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
   .settings-field input { width: 100%; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--border-s); font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; background: var(--bg); }
-  .settings-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10,132,255,0.15); }
+  .settings-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230,126,34,0.15); }
   .settings-actions { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
   .settings-status { margin-top: 12px; padding: 10px 14px; border-radius: var(--r-sm); font-size: 13px; }
   .settings-status.ok { background: var(--green-bg); color: var(--green); }
@@ -320,11 +328,102 @@
   .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--t2); }
   .empty-desc { font-size: 14px; }
 
+  /* ——— RESPONSIVE: Tablet ——— */
+  @media (max-width: 900px) {
+    .header-row { flex-wrap: wrap; gap: 8px; min-height: auto; padding: 12px 0; }
+    .header-brand { width: auto; }
+    .today-bar { font-size: 11px; }
+    .stats { gap: 16px; }
+    .stat-val { font-size: 20px; }
+  }
+
+  /* ——— RESPONSIVE: Mobile ——— */
   @media (max-width: 600px) {
-    .header { padding: 20px 16px 18px; }
-    .container { padding: 0 16px; }
-    .subtasks-panel { padding-left: 28px; }
-    .tab-bar { padding: 0 16px; }
+    .header { padding: 0 14px; }
+    .header-row { flex-wrap: wrap; gap: 6px; padding: 10px 0; }
+    .header-brand { width: 100%; }
+    .header h1 { font-size: 17px; }
+    .header .subtitle { font-size: 10px; }
+    .today-bar { font-size: 10px; order: -1; width: 100%; padding-bottom: 2px; }
+    .header-btns { width: 100%; justify-content: flex-start; gap: 5px; }
+    .btn-outline { padding: 5px 8px; font-size: 11px; }
+    .btn-primary { padding: 5px 10px; font-size: 11px; }
+    .btn-icon { padding: 5px 6px; font-size: 12px; }
+
+    .tab-bar { padding: 0 10px; gap: 0; }
+    .tab-item { padding: 8px 12px; font-size: 12px; gap: 4px; }
+
+    .container { padding: 0 12px; }
+    .stats { gap: 12px; margin-top: 12px; }
+    .stat-val { font-size: 18px; }
+    .stat-label { font-size: 9px; }
+
+    .filters { gap: 4px; padding-top: 12px; }
+    .filter-btn { padding: 4px 10px; font-size: 11px; }
+    .filter-label { font-size: 10px; }
+    .filter-label.ml { margin-left: 8px; }
+
+    .task-list { gap: 8px; padding: 12px 0 30px; }
+    .task-header { padding: 12px 12px; gap: 8px; }
+    .task-title { font-size: 14px; }
+    .task-meta { gap: 8px; font-size: 10px; }
+    .progress-wrap { max-width: 180px; }
+
+    .add-bar { padding: 12px; gap: 8px; }
+    .add-bar input[type="text"] { min-width: 0; font-size: 13px; padding: 7px 10px; }
+    .add-bar select { padding: 7px 8px; font-size: 12px; }
+
+    .subtasks-panel { padding: 10px 10px 12px 10px; }
+    .subtasks-label { font-size: 9px; margin-bottom: 8px; }
+    .sub-main { padding: 10px 10px 0 10px; gap: 8px; }
+    .sub-title { font-size: 13px; }
+    .sub-meta { padding: 5px 10px 0 38px; gap: 4px; }
+    .sub-preview { padding: 6px 10px 10px 38px; gap: 6px; }
+    .notes-preview { max-width: 250px; font-size: 11px; }
+    .sub-detail-body { padding: 0 10px 12px 10px; }
+
+    .edit-row { gap: 5px; }
+    .edit-row input[type="text"] { min-width: 0; font-size: 12px; }
+
+    .add-sub-row { gap: 5px; }
+    .add-sub-row input[type="text"] { min-width: 0; font-size: 12px; padding: 6px 8px; }
+    .add-sub-row input[type="date"] { padding: 6px 6px; font-size: 11px; }
+    .btn-add-sub { padding: 6px 10px; font-size: 12px; }
+
+    .modal { padding: 20px; border-radius: 12px; }
+    .modal h3 { font-size: 17px; }
+    .settings-panel { padding: 20px; border-radius: 12px; }
+    .settings-panel h3 { font-size: 17px; }
+    .settings-actions { flex-wrap: wrap; }
+
+    .coming-soon { padding: 40px 0; }
+    .coming-soon-icon { margin-bottom: 12px; }
+    .coming-soon h2 { font-size: 18px; }
+    .coming-soon p { font-size: 13px; }
+
+    .work-notes-area { min-height: 60px; font-size: 13px; }
+    .add-link-row { flex-wrap: wrap; }
+    .add-link-row input { min-width: 0; }
+    .file-link-btn { max-width: 220px; font-size: 11px; }
+  }
+
+  /* ——— RESPONSIVE: Small phone ——— */
+  @media (max-width: 380px) {
+    .header h1 { font-size: 15px; }
+    .today-bar { display: none; }
+    .tab-item { padding: 7px 8px; font-size: 11px; }
+    .tab-item .tab-icon { display: none; }
+    .stat-val { font-size: 16px; }
+    .stats { gap: 8px; }
+    .task-title { font-size: 13px; }
+  }
+
+  /* Touch-friendly tap targets */
+  @media (hover: none) {
+    .btn-delete-sub { opacity: 0.3 !important; }
+    .btn-delete-task { opacity: 0.3 !important; }
+    .checkbox { width: 24px; height: 24px; }
+    .sub-main { gap: 10px; }
   }
 </style>
 </head>
@@ -334,37 +433,42 @@
 
 <script>
 
-/* ——— SVG ICON SYSTEM ——— */
+/* ——— SVG ICON SYSTEM — Signature dual-tone with accent fills ——— */
 function icon(name, size) {
   var s = size || 16;
+  var a = 'var(--accent)'; // accent color for fills
   var icons = {
-    check: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    arrow: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    plus: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-    close: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
-    calendar: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M2 7H14M5 1.5V4M11 1.5V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    clock: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5V8.5L10.5 10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    warn: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 2L14.5 13H1.5L8 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 7V9.5M8 11.5V11.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    note: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 5.5H10M6 8H10M6 10.5H8.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>',
-    link: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5L9.5 6.5M7 11L5.5 12.5C4.4 13.6 2.6 13.6 1.5 12.5C0.4 11.4 0.4 9.6 1.5 8.5L3 7M9 5L10.5 3.5C11.6 2.4 13.4 2.4 14.5 3.5C15.6 4.6 15.6 6.4 14.5 7.5L13 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    lock: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 7V5C5 3.3 6.3 2 8 2C9.7 2 11 3.3 11 5V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    file: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M4 2H10L13 5V13C13 13.6 12.6 14 12 14H4C3.4 14 3 13.6 3 13V3C3 2.4 3.4 2 4 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 2V5H13" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-    gear: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1.5V3M8 13V14.5M14.5 8H13M3 8H1.5M12.6 3.4L11.5 4.5M4.5 11.5L3.4 12.6M12.6 12.6L11.5 11.5M4.5 4.5L3.4 3.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
-    download: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 2V10M5 7.5L8 10.5L11 7.5M3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    upload: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 10.5V2.5M5 5L8 2L11 5M3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    tasks: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 8L7 10L11 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    chart: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M2 14V8H5V14M6 14V4H9V14M10 14V6.5H13V14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    tag: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M2 8.7V3C2 2.4 2.4 2 3 2H8.7L14 7.3L8.3 13L2 8.7Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor"/></svg>',
-    box: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M2 5L8 2L14 5V11L8 14L2 11V5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M2 5L8 8M8 8V14M8 8L14 5" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-    edit: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M11 2.5L13.5 5L5.5 13H3V10.5L11 2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>',
-    clipboard: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="3" y="3" width="10" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 1.5H10V3.5H6V1.5Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M6 7H10M6 9.5H10M6 12H8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
+    check: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="'+a+'" opacity="0.12"/><path d="M4.5 8.5L7 11L11.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    arrow: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    plus: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="3.5" fill="'+a+'" opacity="0.1"/><path d="M8 4.5V11.5M4.5 8H11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    close: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M4.5 4.5L11.5 11.5M11.5 4.5L4.5 11.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    calendar: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="10.5" rx="2" fill="'+a+'" opacity="0.08"/><rect x="2" y="3.5" width="12" height="10.5" rx="2" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="3.5" width="12" height="3.5" rx="2" fill="currentColor" opacity="0.15"/><path d="M5.5 1.5V4.5M10.5 1.5V4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="5.5" cy="10" r="0.8" fill="currentColor"/><circle cx="8" cy="10" r="0.8" fill="currentColor"/><circle cx="10.5" cy="10" r="0.8" fill="currentColor"/></svg>',
+    clock: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" fill="'+a+'" opacity="0.08"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 4.5V8.5L11 10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r="0.7" fill="'+a+'"/></svg>',
+    warn: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L15 13.5H1L8 1.5Z" fill="currentColor" opacity="0.08"/><path d="M8 1.5L15 13.5H1L8 1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 6.5V9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r="0.8" fill="currentColor"/></svg>',
+    note: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="1.5" width="11" height="13" rx="2" fill="'+a+'" opacity="0.07"/><rect x="2.5" y="1.5" width="11" height="13" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5.5H10.5M5.5 8H10.5M5.5 10.5H8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><rect x="2.5" y="1.5" width="11" height="3" rx="2" fill="'+a+'" opacity="0.12"/></svg>',
+    link: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5L9.5 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M7 11.5L5 13.5C3.6 14.9 1.4 14.9 0 13.5C-1 12.5 -0.5 10 1 8.5L3 6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 4.5L11 2.5C12.4 1.1 14.6 1.1 16 2.5C17.4 3.9 17.4 6.1 16 7.5L13 9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6.5" cy="9.5" r="1.2" fill="'+a+'" opacity="0.25"/></svg>',
+    lock: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7.5" rx="2" fill="currentColor" opacity="0.08"/><rect x="3" y="7" width="10" height="7.5" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 7V5C5.5 3.1 6.6 1.5 8 1.5C9.4 1.5 10.5 3.1 10.5 5V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="10.5" r="1.2" fill="currentColor"/></svg>',
+    file: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M4 1.5H10.5L13.5 4.5V13.5C13.5 14.1 13 14.5 12.5 14.5H4C3.4 14.5 3 14.1 3 13.5V2.5C3 1.9 3.4 1.5 4 1.5Z" fill="'+a+'" opacity="0.06"/><path d="M4 1.5H10.5L13.5 4.5V13.5C13.5 14.1 13 14.5 12.5 14.5H4C3.4 14.5 3 14.1 3 13.5V2.5C3 1.9 3.4 1.5 4 1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M10.5 1.5V4.5H13.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 8H10.5M6 10.5H9" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
+    gear: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" fill="'+a+'" opacity="0.15"/><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1V3M8 13V15M15 8H13M3 8H1M13 3L11.5 4.5M4.5 11.5L3 13M13 13L11.5 11.5M4.5 4.5L3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    download: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 1.5V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 7L8 10.5L11.5 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 13H13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="10.5" r="1" fill="'+a+'" opacity="0.3"/></svg>',
+    upload: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 11V2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 5.5L8 2L11.5 5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 13H13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="2" r="1" fill="'+a+'" opacity="0.3"/></svg>',
+    tasks: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="'+a+'" opacity="0.1"/><rect x="1.5" y="1.5" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.5L7 10.5L11 5.5" stroke="'+a+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    chart: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="8" width="3" height="6" rx="0.8" fill="'+a+'" opacity="0.15"/><rect x="6" y="4" width="3" height="10" rx="0.8" fill="'+a+'" opacity="0.2"/><rect x="10.5" y="6" width="3" height="8" rx="0.8" fill="'+a+'" opacity="0.15"/><path d="M1.5 14H3.5V8.5C3.5 8.2 3.8 8 4 8H4.5V8C4.5 8 4.5 8 4.5 8H1.5V14Z" stroke="currentColor" stroke-width="0"/><rect x="1.5" y="8" width="3" height="6" rx="0.8" stroke="currentColor" stroke-width="1.1"/><rect x="6" y="4" width="3" height="10" rx="0.8" stroke="currentColor" stroke-width="1.1"/><rect x="10.5" y="6" width="3" height="8" rx="0.8" stroke="currentColor" stroke-width="1.1"/></svg>',
+    tag: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M1.5 8.5V3C1.5 2.2 2.2 1.5 3 1.5H8.5L14.5 7.5L8 14L1.5 8.5Z" fill="'+a+'" opacity="0.08"/><path d="M1.5 8.5V3C1.5 2.2 2.2 1.5 3 1.5H8.5L14.5 7.5L8 14L1.5 8.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="5" cy="5" r="1.3" fill="'+a+'"/></svg>',
+    box: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 8L14 5V11L8 14L2 11V5L8 8Z" fill="'+a+'" opacity="0.08"/><path d="M2 5L8 2L14 5V11L8 14L2 11V5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M2 5L8 8M8 8V14M8 8L14 5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="0.8" fill="'+a+'"/></svg>',
+    edit: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M3 10.5V13H5.5L12.5 6L10 3.5L3 10.5Z" fill="'+a+'" opacity="0.08"/><path d="M3 10.5V13H5.5L12.5 6L10 3.5L3 10.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M10 3.5L12.5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    clipboard: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="3" width="11" height="11.5" rx="2" fill="'+a+'" opacity="0.06"/><rect x="2.5" y="3" width="11" height="11.5" rx="2" stroke="currentColor" stroke-width="1.2"/><rect x="5.5" y="1" width="5" height="3" rx="1" fill="'+a+'" opacity="0.15"/><rect x="5.5" y="1" width="5" height="3" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M5.5 7.5H10.5M5.5 10H10.5M5.5 12.5H8" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>',
   };
   return icons[name] || '';
 }
 
-var LOGO_SVG = '<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-  '<rect width="28" height="28" rx="7" fill="#3b82f6"/>' +
-  '<path d="M5 14H8L10.5 8L13 18L15.5 11L17 14H23" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+var LOGO_SVG = '<svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+  '<rect width="30" height="30" rx="7.5" fill="url(#lg)"/>' +
+  '<defs><linearGradient id="lg" x1="0" y1="0" x2="30" y2="30"><stop stop-color="#f0a04b"/><stop offset="1" stop-color="#e67e22"/></linearGradient></defs>' +
+  '<path d="M5 15H8.5L11 9L14 20L17 12L19 15H25" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>' +
+  '<circle cx="23" cy="8" r="3.5" fill="#22c55e"/>' +
+  '<circle cx="23" cy="8" r="2" fill="white"/>' +
+  '<circle cx="23" cy="8" r="1" fill="#22c55e"/>' +
 '</svg>';
 
 
@@ -631,8 +735,8 @@ function render() {
       '<div class="header-inner">' +
         '<div class="header-row">' +
           '<div class="header-brand">' +
-            LOGO_SVG + '<h1>Pulsqr</h1>' +
-            '<p class="subtitle">Your operations pulse</p>' +
+            LOGO_SVG + '<h1>TaskaDo</h1>' +
+            '<p class="subtitle">Tasks. Done. Simple.</p>' +
           '</div>' +
           '<span class="today-bar">' + icon('calendar',14) + ' ' + new Date().toLocaleDateString("en-GB", {weekday:"long", day:"2-digit", month:"long", year:"numeric"}) + '</span>' +
           '<div class="header-btns">' +
@@ -682,9 +786,9 @@ function renderTabBar() {
 function renderTasksTab(tasks, stats) {
   return '<div class="stats">' +
           '<div class="stat"><span class="stat-val" style="color:var(--t1)">' + stats.total + '</span><span class="stat-label">Total</span></div>' +
-          '<div class="stat"><span class="stat-val" style="color:var(--accent)">' + stats.active + '</span><span class="stat-label">Active</span></div>' +
+          '<div class="stat"><span class="stat-val" style="color:var(--blue)">' + stats.active + '</span><span class="stat-label">Active</span></div>' +
           '<div class="stat"><span class="stat-val" style="color:var(--green)">' + stats.completed + '</span><span class="stat-label">Done</span></div>' +
-          '<div class="stat"><span class="stat-val" style="color:var(--orange)">' + stats.dueSoon + '</span><span class="stat-label">Due Soon</span></div>' +
+          '<div class="stat"><span class="stat-val" style="color:var(--warn)">' + stats.dueSoon + '</span><span class="stat-label">Due Soon</span></div>' +
           '<div class="stat"><span class="stat-val" style="color:var(--red)">' + stats.overdue + '</span><span class="stat-label">Overdue</span></div>' +
         '</div>' +
 
@@ -945,7 +1049,7 @@ function renderSettingsModal() {
   return '<div class="modal-overlay" onclick="toggleSettings()">' +
     '<div class="settings-panel" onclick="event.stopPropagation()">' +
       '<h3>' + icon('gear',18) + ' Settings</h3>' +
-      '<p class="desc">Connect Pulsqr to Google Sheets for cloud sync. Your data will be accessible from any device.</p>' +
+      '<p class="desc">Connect TaskaDo to Google Sheets for cloud sync. Your data will be accessible from any device.</p>' +
 
       '<div class="settings-field">' +
         '<label>Google Apps Script URL</label>' +
@@ -965,7 +1069,7 @@ function renderSettingsModal() {
         '<p><strong>Need help?</strong> Follow these steps:<br>' +
         '1. Create a Google Sheet<br>' +
         '2. Go to Extensions \u2192 Apps Script<br>' +
-        '3. Paste the Pulsqr script code (see setup guide)<br>' +
+        '3. Paste the TaskaDo script code (see setup guide)<br>' +
         '4. Deploy \u2192 New deployment \u2192 Web app \u2192 Anyone<br>' +
         '5. Copy the URL and paste it above</p>' +
       '</div>' +
