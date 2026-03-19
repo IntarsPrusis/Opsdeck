@@ -113,9 +113,7 @@
   [data-theme="light"] .compact-toggle:hover { background: var(--surface-hover); }
   [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background: var(--bg); color: var(--t1); }
   [data-theme="light"] .work-notes-display { background: #fff; }
-  [data-theme="light"] .notes-preview { background: rgba(124,58,237,0.05); }
-  [data-theme="light"] .notes-preview:hover { background: rgba(124,58,237,0.1); }
-  [data-theme="light"] .links-chip { background: rgba(124,58,237,0.06); }
+  [data-theme="light"] .sub-expand-btn:hover { color: var(--accent); }
   [data-theme="light"] .file-link-btn { background: rgba(124,58,237,0.05); border-color: rgba(124,58,237,0.15); }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); min-height: 100vh; color: var(--t1); -webkit-font-smoothing: antialiased; }
@@ -287,13 +285,13 @@
   .deadline-locked { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #ff6961; font-weight: 600; white-space: nowrap; }
 
   /* Row 3: preview strip (notes + links) */
-  .sub-preview { display: flex; align-items: center; gap: 8px; padding: 8px 14px 12px 44px; flex-wrap: wrap; }
-  .notes-preview { font-size: 12px; color: var(--t2); max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: rgba(167,139,250,0.06); padding: 4px 10px; border-radius: 6px; border-left: 3px solid var(--accent); cursor: pointer; transition: all 0.15s; }
-  .notes-preview:hover { background: rgba(167,139,250,0.12); color: var(--t1); }
-  .notes-empty-hint { font-size: 12px; color: var(--t3); cursor: pointer; padding: 4px 0; transition: color 0.15s; }
-  .notes-empty-hint:hover { color: var(--accent); }
-  .links-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--accent); background: rgba(167,139,250,0.08); padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-  .links-chip:hover { background: var(--accent-bg); }
+  /* Row 3: expand/collapse button */
+  .sub-expand-row { padding: 4px 14px 10px 44px; }
+  .sub-expand-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--t3); background: none; border: none; cursor: pointer; padding: 3px 0; transition: color 0.15s; font-family: inherit; font-weight: 500; }
+  .sub-expand-btn:hover { color: var(--accent); }
+  .sub-expand-btn.open { color: var(--accent); }
+  .sub-expand-arrow { display: inline-flex; transition: transform 0.2s; }
+  .sub-expand-arrow.open { transform: rotate(90deg); }
 
   /* Expanded detail panel */
   .sub-detail-body { padding: 0 14px 14px 44px; border-top: 1px solid var(--sub-border); margin-top: 4px; background: var(--detail-bg); }
@@ -409,7 +407,7 @@
   .sub-card.compact .sub-main { padding: 7px 10px 7px 10px; align-items: center; }
   .sub-card.compact .sub-title { font-size: 13px; }
   .sub-card.compact .sub-meta,
-  .sub-card.compact .sub-preview,
+  .sub-card.compact .sub-expand-row,
   .sub-card.compact .sub-detail-body { display: none; }
   .sub-card.compact .sub-compact-info { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
   .sub-compact-info { display: none; }
@@ -471,8 +469,7 @@
     .sub-card.compact .sub-main { padding: 6px 8px; }
     .sub-title { font-size: 13px; }
     .sub-meta { padding: 5px 10px 0 38px; gap: 4px; }
-    .sub-preview { padding: 6px 10px 10px 38px; gap: 6px; }
-    .notes-preview { max-width: 250px; font-size: 11px; }
+    .sub-expand-row { padding: 4px 10px 8px 38px; }
     .sub-detail-body { padding: 0 10px 12px 10px; }
 
     .edit-row { gap: 5px; }
@@ -1049,19 +1046,19 @@ function renderSubtasks(t) {
     if (s.completed && s.completedDate) html += '<span class="sub-completed-chip">' + icon('check',11) + ' ' + fmtDate(s.completedDate) + '</span>';
     html += '</div>';
 
-    // ROW 3: Preview strip (notes snippet + link count)
-    html += '<div class="sub-preview">';
-    if (s.workNotes) {
-      var preview = s.workNotes.split('\n')[0].slice(0, 80);
-      if (s.workNotes.length > 80) preview += '\u2026';
-      html += '<span class="notes-preview" onclick="toggleSubDetail(\'' + s.id + '\')">' + esc(preview) + '</span>';
-    } else {
-      html += '<span class="notes-empty-hint" onclick="state.expandedSubtasks[\'' + s.id + '\']=true;state.editingNotes=\'' + s.id + '\';render();">+ Add notes</span>';
+    // ROW 3: Expand button (replaces preview strip)
+    var hasContent = s.workNotes || links.length > 0;
+    var contentHints = [];
+    if (s.workNotes) contentHints.push(icon('note',10) + ' Notes');
+    if (links.length > 0) contentHints.push(icon('link',10) + ' ' + links.length + ' file' + (links.length > 1 ? 's' : ''));
+    if (hasContent || !s.completed) {
+      html += '<div class="sub-expand-row">';
+      html += '<button class="sub-expand-btn ' + (isExpSub?'open':'') + '" onclick="toggleSubDetail(\'' + s.id + '\')">';
+      html += '<span class="sub-expand-arrow ' + (isExpSub?'open':'') + '">' + icon('arrow',10) + '</span>';
+      html += isExpSub ? 'Collapse' : (hasContent ? contentHints.join(' · ') : 'Details');
+      html += '</button>';
+      html += '</div>';
     }
-    if (links.length > 0) {
-      html += '<span class="links-chip" onclick="toggleSubDetail(\'' + s.id + '\')">' + icon('link',11) + ' ' + links.length + ' file' + (links.length > 1 ? 's' : '') + '</span>';
-    }
-    html += '</div>';
 
     // EXPANDED DETAIL (notes full + file links)
     if (isExpSub) {
