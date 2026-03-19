@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#13141a">
+<meta name="theme-color" content="#13141a" id="themeColor">
 <title>TaskaDo</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -49,6 +49,74 @@
     --sub-accent: rgba(167,139,250,0.5);
     --detail-bg: #171924;
   }
+
+  [data-theme="light"] {
+    --bg: #f0f1f5;
+    --surface: #ffffff;
+    --surface-solid: #ffffff;
+    --surface-hover: rgba(0,0,0,0.03);
+    --surface-sec: rgba(0,0,0,0.04);
+    --border: rgba(0,0,0,0.08);
+    --border-s: rgba(0,0,0,0.13);
+    --t1: #1a1a2e;
+    --t2: #6b6b80;
+    --t3: #9b9bb0;
+    --accent: #7c3aed;
+    --accent-h: #6d28d9;
+    --accent-bg: rgba(124,58,237,0.08);
+    --accent-glow: rgba(124,58,237,0.12);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.1);
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --orange: #f59e0b;
+    --orange-bg: rgba(245,158,11,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.08);
+    --warn: #dc2626;
+    --warn-bg: rgba(220,38,38,0.08);
+    --header-bg: #ffffff;
+    --header-t1: #1a1a2e;
+    --header-t2: rgba(26,26,46,0.5);
+    --header-border: rgba(0,0,0,0.08);
+    --task-bg: #ffffff;
+    --task-border: rgba(0,0,0,0.07);
+    --sub-panel: #e8e9f0;
+    --sub-card: #f4f5f9;
+    --sub-border: rgba(0,0,0,0.06);
+    --sub-accent: rgba(124,58,237,0.4);
+    --detail-bg: #ecedf3;
+  }
+  [data-theme="light"] .header { background: var(--header-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  [data-theme="light"] .header h1 { color: var(--header-t1); }
+  [data-theme="light"] .header .subtitle { color: var(--header-t2); }
+  [data-theme="light"] .btn-outline { border-color: var(--border-s); background: var(--surface-solid); color: var(--t2); }
+  [data-theme="light"] .btn-outline:hover { background: var(--surface-hover); color: var(--t1); }
+  [data-theme="light"] .btn-icon { border-color: var(--border-s); background: var(--surface-solid); color: var(--t2); }
+  [data-theme="light"] .btn-icon:hover { background: var(--surface-hover); color: var(--t1); }
+  [data-theme="light"] .tab-bar { background: #f8f8fc; border-bottom: 1px solid var(--border); box-shadow: none; }
+  [data-theme="light"] .tab-item { color: var(--t3); }
+  [data-theme="light"] .tab-item:hover { color: var(--t1); background: rgba(0,0,0,0.03); }
+  [data-theme="light"] .tab-item.active { color: var(--accent); }
+  [data-theme="light"] .tab-item .tab-badge { background: var(--surface-sec); color: var(--t3); }
+  [data-theme="light"] .tab-item.active .tab-badge { background: var(--accent-bg); color: var(--accent); }
+  [data-theme="light"] .tab-item .tab-soon { background: var(--surface-sec); color: var(--t3); }
+  [data-theme="light"] .sync-status.offline { color: var(--t3); background: var(--surface-sec); }
+  [data-theme="light"] .sync-dot.offline { background: var(--t3); }
+  [data-theme="light"] .checkbox.checked { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+  [data-theme="light"] .sub-card:hover { border-color: rgba(0,0,0,0.1); border-left-color: var(--accent); box-shadow: 0 2px 10px var(--accent-glow); background: #fff; }
+  [data-theme="light"] .task-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  [data-theme="light"] .modal { background: #fff; }
+  [data-theme="light"] .settings-panel { background: #fff; }
+  [data-theme="light"] .add-bar { background: #fff; }
+  [data-theme="light"] .compact-toggle { background: var(--surface-solid); }
+  [data-theme="light"] .compact-toggle:hover { background: var(--surface-hover); }
+  [data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea { background: var(--bg); color: var(--t1); }
+  [data-theme="light"] .work-notes-display { background: #fff; }
+  [data-theme="light"] .notes-preview { background: rgba(124,58,237,0.05); }
+  [data-theme="light"] .notes-preview:hover { background: rgba(124,58,237,0.1); }
+  [data-theme="light"] .links-chip { background: rgba(124,58,237,0.06); }
+  [data-theme="light"] .file-link-btn { background: rgba(124,58,237,0.05); border-color: rgba(124,58,237,0.15); }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); min-height: 100vh; color: var(--t1); -webkit-font-smoothing: antialiased; }
   input, select, textarea, button { font-family: inherit; }
@@ -90,6 +158,8 @@
   @keyframes pulse-sync { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
 
   .btn-icon { padding: 5px 7px; border-radius: 6px; border: 1px solid var(--header-border); background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); font-size: 14px; cursor: pointer; transition: all 0.15s; line-height: 1; }
+  .btn-icon svg { transition: transform 0.2s; }
+  .btn-icon:hover svg { transform: rotate(15deg); }
   .btn-icon:hover { background: rgba(255,255,255,0.16); color: #fff; }
 
   /* Settings modal */
@@ -471,7 +541,9 @@ function icon(name, size) {
     link: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M6.5 9.5L9.5 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M7 11.5L5 13.5C3.6 14.9 1.4 14.9 0 13.5C-1 12.5 -0.5 10 1 8.5L3 6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9 4.5L11 2.5C12.4 1.1 14.6 1.1 16 2.5C17.4 3.9 17.4 6.1 16 7.5L13 9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="8" r="1.5" fill="#a78bfa" opacity="0.2"/></svg>',
     lock: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7.5" rx="2" fill="#a78bfa" opacity="0.08"/><rect x="3" y="7" width="10" height="7.5" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 7V5C5.5 3.1 6.6 1.5 8 1.5C9.4 1.5 10.5 3.1 10.5 5V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="10.5" r="1" fill="#a78bfa"/></svg>',
     file: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M4 1.5H10.5L13.5 4.5V13.5C13.5 14.1 13 14.5 12.5 14.5H4C3.4 14.5 3 14.1 3 13.5V2.5C3 1.9 3.4 1.5 4 1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M10.5 1.5V4.5H13.5" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><rect x="5.5" y="7" width="5.5" height="0.8" rx="0.4" fill="#a78bfa" opacity="0.4"/><rect x="5.5" y="9.5" width="4" height="0.8" rx="0.4" fill="#a78bfa" opacity="0.25"/></svg>',
-    gear: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" fill="#a78bfa" opacity="0.15"/><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1V3M8 13V15M15 8H13M3 8H1M13 3L11.5 4.5M4.5 11.5L3 13M13 13L11.5 11.5M4.5 4.5L3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    gear: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="1.5" rx="0.75" fill="currentColor" opacity="0.15"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor" opacity="0.15"/><rect x="1" y="11.5" width="14" height="1.5" rx="0.75" fill="currentColor" opacity="0.15"/><circle cx="5" cy="3.75" r="2" fill="#a78bfa"/><circle cx="5" cy="3.75" r="2" stroke="currentColor" stroke-width="0.8"/><circle cx="11" cy="8" r="2" fill="#a78bfa"/><circle cx="11" cy="8" r="2" stroke="currentColor" stroke-width="0.8"/><circle cx="7" cy="12.25" r="2" fill="#a78bfa"/><circle cx="7" cy="12.25" r="2" stroke="currentColor" stroke-width="0.8"/></svg>',
+    sun: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3.5" fill="#fbbf24" opacity="0.2"/><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 1.5V3M8 13V14.5M1.5 8H3M13 8H14.5M3.4 3.4L4.5 4.5M11.5 11.5L12.6 12.6M12.6 3.4L11.5 4.5M4.5 11.5L3.4 12.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>',
+    moon: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M13.5 9.5C12.5 11.5 10.4 13 8 13C4.7 13 2 10.3 2 7C2 4.6 3.5 2.5 5.5 1.5C4.5 3 4.2 5 5 7C5.8 9 7.5 10.5 9.5 11C11 11.3 12.5 10.8 13.5 9.5Z" fill="#a78bfa" opacity="0.15"/><path d="M13.5 9.5C12.5 11.5 10.4 13 8 13C4.7 13 2 10.3 2 7C2 4.6 3.5 2.5 5.5 1.5C4.5 3 4.2 5 5 7C5.8 9 7.5 10.5 9.5 11C11 11.3 12.5 10.8 13.5 9.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="10" cy="4" r="0.7" fill="#a78bfa" opacity="0.5"/><circle cx="12" cy="6" r="0.5" fill="#a78bfa" opacity="0.3"/></svg>',
     download: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 1.5V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 7L8 10.5L11.5 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 13H13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     upload: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><path d="M8 11V2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M4.5 5.5L8 2L11.5 5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 13H13.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
     tasks: '<svg width="'+s+'" height="'+s+'" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="#a78bfa" opacity="0.1"/><rect x="1.5" y="1.5" width="13" height="13" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.5L7 10.5L11 5.5" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -518,6 +590,7 @@ let state = {
   addingSubTo: null,
   compactSubtasks: {},
   activeTab: "tasks",
+  darkMode: true,
   showSettings: false,
   cloudUrl: "",
   syncStatus: "offline", // offline, syncing, connected, error
@@ -769,6 +842,7 @@ function render() {
               '<button class="btn-primary" onclick="toggleAdd()">' + icon('plus',13) + ' New Task</button>'
             : '') +
             '<span id="syncStatus" class="sync-status offline"><span class="sync-dot offline"></span>' + (state.cloudUrl ? 'Offline' : 'Local only') + '</span>' +
+            '<button class="btn-icon" onclick="toggleTheme()" title="Toggle theme">' + (state.darkMode ? icon('sun',15) : icon('moon',15)) + '</button>' +
             '<button class="btn-icon" onclick="toggleSettings()" title="Settings">' + icon('gear',15) + '</button>' +
           '</div>' +
         '</div>' +
@@ -1224,6 +1298,33 @@ function removeFileLink(taskId, subId, idx) {
   save(); render();
 }
 
+
+/* ——— THEME TOGGLE ——— */
+var THEME_KEY = "taskado-theme";
+function loadTheme() {
+  try {
+    var saved = localStorage.getItem(THEME_KEY);
+    if (saved === "light") {
+      state.darkMode = false;
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      state.darkMode = true;
+      document.documentElement.removeAttribute('data-theme');
+    }
+  } catch(e) {}
+}
+function toggleTheme() {
+  state.darkMode = !state.darkMode;
+  if (state.darkMode) {
+    document.documentElement.removeAttribute('data-theme');
+    try { localStorage.setItem(THEME_KEY, 'dark'); } catch(e) {}
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(THEME_KEY, 'light'); } catch(e) {}
+  }
+  render();
+}
+
 function toggleCompact(taskId) {
   state.compactSubtasks[taskId] = !state.compactSubtasks[taskId];
   render();
@@ -1438,6 +1539,7 @@ function fetchSheet() {
 }
 
 /* ——— INIT ——— */
+loadTheme();
 load();
 render();
 </script>
