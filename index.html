@@ -328,6 +328,28 @@
   .empty-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: var(--t2); }
   .empty-desc { font-size: 14px; }
 
+
+  /* Compact subtask mode */
+  .subtasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .subtasks-label { margin-bottom: 0; }
+  .compact-toggle { font-size: 11px; color: var(--t3); cursor: pointer; background: none; border: 1px solid var(--sub-border); padding: 3px 9px; border-radius: 5px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px; }
+  .compact-toggle:hover { color: var(--t1); border-color: var(--border-s); background: rgba(0,0,0,0.03); }
+  .compact-toggle.active { color: var(--accent); border-color: var(--accent); background: var(--accent-bg); }
+  .sub-card.compact { margin-bottom: 3px; border-left-width: 2px; }
+  .sub-card.compact .sub-main { padding: 7px 10px 7px 10px; align-items: center; }
+  .sub-card.compact .sub-title { font-size: 13px; }
+  .sub-card.compact .sub-meta,
+  .sub-card.compact .sub-preview,
+  .sub-card.compact .sub-detail-body { display: none; }
+  .sub-card.compact .sub-compact-info { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .sub-compact-info { display: none; }
+  .sub-compact-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .sub-compact-dot.ok { background: var(--t3); }
+  .sub-compact-dot.warn { background: var(--warn); }
+  .sub-compact-dot.overdue { background: var(--red); }
+  .sub-compact-dot.done { background: var(--green); }
+  .sub-compact-date { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--t3); white-space: nowrap; }
+
   /* ——— RESPONSIVE: Tablet ——— */
   @media (max-width: 900px) {
     .header-row { flex-wrap: wrap; gap: 8px; min-height: auto; padding: 12px 0; }
@@ -376,6 +398,7 @@
     .subtasks-panel { padding: 10px 10px 12px 10px; }
     .subtasks-label { font-size: 9px; margin-bottom: 8px; }
     .sub-main { padding: 10px 10px 0 10px; gap: 8px; }
+    .sub-card.compact .sub-main { padding: 6px 8px; }
     .sub-title { font-size: 13px; }
     .sub-meta { padding: 5px 10px 0 38px; gap: 4px; }
     .sub-preview { padding: 6px 10px 10px 38px; gap: 6px; }
@@ -492,6 +515,7 @@ let state = {
   expandedSubtasks: {},
   editingNotes: null,
   addingSubTo: null,
+  compactSubtasks: {},
   activeTab: "tasks",
   showSettings: false,
   cloudUrl: "",
@@ -880,8 +904,14 @@ function renderTask(t) {
 
 function renderSubtasks(t) {
   var today = todayStr();
+  var isCompact = state.compactSubtasks[t.id] || false;
   var html = '<div class="subtasks-panel">';
+  html += '<div class="subtasks-header">';
   html += '<div class="subtasks-label">' + icon('tasks',12) + ' Subtasks (' + t.subtasks.length + ')</div>';
+  if (t.subtasks.length > 1) {
+    html += '<button class="compact-toggle ' + (isCompact?'active':'') + '" onclick="toggleCompact(\'' + t.id + '\')">' + (isCompact ? icon('arrow',10) + ' Expand' : icon('arrow',10) + ' Compact') + '</button>';
+  }
+  html += '</div>';
   if (t.subtasks.length === 0) html += '<p class="no-subtasks">No subtasks yet \u2014 add one below.</p>';
 
   t.subtasks.forEach(function(s) {
@@ -908,7 +938,7 @@ function renderSubtasks(t) {
     }
 
     // --- CARD LAYOUT ---
-    html += '<div class="sub-card ' + (s.completed?'done':'') + '">';
+    html += '<div class="sub-card ' + (s.completed?'done':'') + (isCompact?' compact':'') + '">';
 
     // ROW 1: Checkbox + Title + Delete
     html += '<div class="sub-main">';
@@ -917,6 +947,14 @@ function renderSubtasks(t) {
     '</button>';
     html += '<span class="sub-title ' + (s.completed?'done':'') + '" onclick="startEditSub(\'' + s.id + '\')">' + esc(s.description) + '</span>';
     html += '<button class="btn-delete-sub" onclick="deleteSub(\'' + t.id + '\',\'' + s.id + '\')" title="Delete subtask">' + icon('close',12) + '</button>';
+    // Compact-mode inline info
+    var cDot = s.completed ? 'done' : (isOverdue ? 'overdue' : (reminder ? 'warn' : 'ok'));
+    html += '<span class="sub-compact-info">';
+    if (s.agent) html += '<span class="agent-badge" style="font-size:9px;padding:1px 5px">' + esc(s.agent) + '</span>';
+    html += '<span class="sub-compact-dot ' + cDot + '"></span>';
+    if (s.deadline && !s.completed) html += '<span class="sub-compact-date">' + fmtDate(s.deadline) + '</span>';
+    if (s.completed) html += '<span class="sub-compact-date" style="color:var(--green)">' + icon('check',9) + '</span>';
+    html += '</span>';
     html += '</div>';
 
     // ROW 2: Meta chips (agent, deadline, reminder, status)
@@ -1186,6 +1224,11 @@ function removeFileLink(taskId, subId, idx) {
   if (!s || !s.links) return;
   s.links.splice(idx, 1);
   save(); render();
+}
+
+function toggleCompact(taskId) {
+  state.compactSubtasks[taskId] = !state.compactSubtasks[taskId];
+  render();
 }
 
 /* ——— ACTIONS ——— */
