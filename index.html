@@ -1602,19 +1602,24 @@ function saveNote(id) {
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (note && el) { note.text = el.value; }
   saveNotes();
-  _noteTyping = false;
-  render(true);
+  // Visual confirmation without destroying DOM
+  var btn = event && event.target ? event.target.closest('.note-save-btn') : null;
+  if (btn) {
+    btn.textContent = 'Saved!';
+    btn.style.color = 'var(--green)';
+    setTimeout(function() { _noteTyping = false; render(true); }, 800);
+  } else {
+    _noteTyping = false;
+    render(true);
+  }
 }
 function onNoteBlur(id) {
   var el = document.getElementById("qn-" + id);
   var note = state.quickNotes.find(function(n){ return n.id === id; });
-  if (note && el) {
-    note.text = el.value;
-  }
+  if (note && el) { note.text = el.value; }
   saveNotes();
-  _noteTyping = false;
-  // Delayed render to update UI after keyboard closes
-  setTimeout(function() { render(true); }, 100);
+  // Don't render here — it destroys buttons before tap registers on mobile
+  setTimeout(function() { _noteTyping = false; }, 200);
 }
 function updateNote(id) {
   // kept for backward compat, real work in onNoteInput
@@ -1642,7 +1647,7 @@ function deleteNote(id) {
   render(true);
 }
 function noteToTask(id) {
-  // Flush textarea value first
+  _noteTyping = false;
   var el = document.getElementById("qn-" + id);
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (!note) return;
@@ -1688,9 +1693,9 @@ function renderNotesContent() {
       '<div class="note-footer">' +
         '<span class="note-time">' + timeStr + '</span>' +
         '<div class="note-actions">' +
-          '<button class="note-save-btn" onclick="saveNote(\'' + n.id + '\')" title="Save note">' + icon('check',9) + ' Save</button>' +
-          '<button class="note-to-task" onclick="noteToTask(\'' + n.id + '\')" title="Convert to task">' + icon('plus',9) + ' Task</button>' +
-          '<button class="note-act-btn del" onclick="deleteNote(\'' + n.id + '\')" title="Delete">' + icon('close',11) + '</button>' +
+          '<button class="note-save-btn" onmousedown="event.preventDefault()" onclick="saveNote(\'' + n.id + '\')" title="Save note">' + icon('check',9) + ' Save</button>' +
+          '<button class="note-to-task" onmousedown="event.preventDefault()" onclick="noteToTask(\'' + n.id + '\')" title="Convert to task">' + icon('plus',9) + ' Task</button>' +
+          '<button class="note-act-btn del" onmousedown="event.preventDefault()" onclick="deleteNote(\'' + n.id + '\')" title="Delete">' + icon('close',11) + '</button>' +
         '</div>' +
       '</div>' +
     '</div>';
