@@ -605,6 +605,12 @@
 <div id="app"></div>
 
 <script>
+"use strict";
+
+/* Register service worker — forces browser to always load fresh */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function() {});
+}
 
 /* ——— SVG ICON SYSTEM — Refined gradient-accent icons for dark UI ——— */
 function icon(name, size) {
@@ -853,7 +859,7 @@ function cloudLoad() {
             merged.push(localMap[id]);
           });
           state.quickNotes = merged;
-          saveNotesLocal();
+          Notes.saveLocal();
         }
         sortTasks();
         saveLocal();
