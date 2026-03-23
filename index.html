@@ -1584,6 +1584,8 @@ function toggleTheme() {
 var NOTES_KEY = "taskado-quick-notes";
 
 var Notes = {
+  _pushTimer: null,
+
   loadLocal: function() {
     try {
       var raw = localStorage.getItem(NOTES_KEY);
@@ -1608,10 +1610,18 @@ var Notes = {
     if (note) {
       note.text = el.value;
       Notes.saveLocal();
+      // Push to cloud after 2 seconds of no typing
+      clearTimeout(Notes._pushTimer);
+      Notes._pushTimer = setTimeout(function() {
+        Notes.captureAll();
+        Notes.saveLocal();
+        if (state.cloudUrl && _cloudLoadDone) cloudSave();
+      }, 2000);
     }
   },
 
   onBlur: function(id) {
+    clearTimeout(Notes._pushTimer);
     Notes.captureAll();
     Notes.saveLocal();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
