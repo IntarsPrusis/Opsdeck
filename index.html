@@ -443,10 +443,10 @@
   /* ——— STICKY NOTES PANEL ——— */
   .app-layout { display: flex; gap: 20px; min-height: calc(100vh - 100px); }
   .app-main { flex: 1; min-width: 0; }
-  .notes-panel { width: 280px; flex-shrink: 0; padding: 0 0 16px 20px; position: sticky; top: 100px; max-height: calc(100vh - 110px); overflow-y: auto; align-self: flex-start; border-left: 1px solid var(--border); }
+  .notes-panel { width: 280px; flex-shrink: 0; padding: 16px 0 16px 20px; position: sticky; top: 100px; max-height: calc(100vh - 110px); overflow-y: auto; align-self: flex-start; border-left: 1px solid var(--border); }
   .notes-panel::-webkit-scrollbar { width: 3px; }
   .notes-panel::-webkit-scrollbar-thumb { background: var(--border-s); border-radius: 3px; }
-  .notes-panel-inner { background: var(--task-bg); border: 1px solid var(--task-border); border-radius: var(--r); padding: 14px; margin-top: 16px; }
+  .notes-panel-inner { background: var(--task-bg); border: 1px solid var(--task-border); border-radius: var(--r); padding: 14px; }
   .notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .notes-title { font-size: 12px; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 5px; }
   .notes-count { font-size: 10px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
@@ -966,12 +966,7 @@ function render() {
 
     '<div class="container">' +
       renderMetalPrices() +
-      '<div class="app-layout">' +
-        '<div class="app-main">' +
-          (state.activeTab === "tasks" ? renderTasksTab(tasks, stats) : renderComingSoon()) +
-        '</div>' +
-        renderNotesPanel() +
-      '</div>' +
+      (state.activeTab === "tasks" ? renderTasksTab(tasks, stats) : renderComingSoon()) +
     '</div>' +
 
     renderNotesFab() +
@@ -1074,6 +1069,8 @@ function renderTasksTab(tasks, stats) {
         '<button class="btn-cancel" onclick="toggleAdd()">Cancel</button>' +
       '</div>' : "") +
 
+      '<div class="app-layout">' +
+      '<div class="app-main">' +
       '<div class="task-list">' +
         (tasks.length === 0 ?
         '<div class="empty">' +
@@ -1082,6 +1079,9 @@ function renderTasksTab(tasks, stats) {
           '<p class="empty-desc">Click "+ New Task" or import from Google Sheets to get started.</p>' +
         '</div>'
         : tasks.map(function(t){ return renderTask(t); }).join("")) +
+      '</div>' +
+      '</div>' +
+      renderNotesPanel() +
       '</div>';
 }
 
