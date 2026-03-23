@@ -1600,7 +1600,6 @@ function addQuickNote() {
     created: new Date().toISOString()
   });
   saveNotes();
-  if (state.cloudUrl) cloudSave();
   _noteTyping = false;
   render(true);
   setTimeout(function(){
@@ -1644,6 +1643,11 @@ function onNoteBlur(id) {
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (note && el) { note.text = el.value; }
   saveNotes();
+  // Debounced cloud sync after typing stops
+  clearTimeout(_noteSaveTimer);
+  _noteSaveTimer = setTimeout(function() {
+    if (state.cloudUrl && _cloudLoadDone) cloudSave();
+  }, 1000);
   // Don't render here — it destroys buttons before tap registers on mobile
   setTimeout(function() { _noteTyping = false; }, 200);
 }
@@ -1715,6 +1719,7 @@ function syncNotesNow() {
 function toggleNotesDrawer() {
   if (state.notesDrawerOpen) {
     flushAllNotes();
+    if (state.cloudUrl && _cloudLoadDone) cloudSave();
   } else {
     // Opening drawer — refresh from cloud first
     if (state.cloudUrl && _cloudLoadDone) {
