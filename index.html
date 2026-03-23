@@ -480,23 +480,9 @@
   [data-theme="light"] .note-card:hover { background: rgba(0,0,0,0.02); }
   [data-theme="light"] .note-text { color: var(--t1); }
 
-  /* Mobile: floating button + drawer */
-  .notes-fab { display: none; position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #7c8db5, #5a6d94); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(124,141,181,0.4); z-index: 200; align-items: center; justify-content: center; transition: transform 0.2s; }
-  .notes-fab:active { transform: scale(0.92); }
-  .notes-fab-count { position: absolute; top: -2px; right: -2px; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; }
-  .notes-drawer-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 250; }
-  .notes-drawer { position: fixed; bottom: 0; left: 0; right: 0; max-height: 75vh; background: var(--task-bg); border-radius: 16px 16px 0 0; z-index: 300; padding: 16px 16px 24px; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s ease; }
-  .notes-drawer.open { transform: translateY(0); }
-  .notes-drawer-handle { width: 36px; height: 4px; background: var(--border-s); border-radius: 2px; margin: 0 auto 10px; cursor: pointer; padding: 8px 0; background-clip: content-box; }
-  .notes-drawer-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-  .notes-drawer-close { background: none; border: 1px solid var(--border-s); color: var(--t2); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .notes-drawer-close:hover { color: var(--t1); border-color: var(--t3); }
-  [data-theme="light"] .notes-fab { background: linear-gradient(135deg, #7c8db5, #5a6d94); }
-  [data-theme="light"] .notes-drawer { background: #fff; }
-
   @media (max-width: 1100px) {
-    .notes-panel { display: none; }
-    .notes-fab { display: flex; bottom: 72px; }
+    .app-layout { flex-direction: column; }
+    .notes-panel { width: 100%; padding: 16px 0 0; border-left: none; position: static; max-height: none; border-top: 1px solid var(--border); }
   }
 
   /* ——— RESPONSIVE: Tablet ——— */
@@ -714,7 +700,6 @@ let state = {
   addingSubTo: null,
   compactSubtasks: {},
   quickNotes: [],
-  notesDrawerOpen: false,
   activeTab: "tasks",
   darkMode: true,
   showSettings: false,
@@ -1025,8 +1010,6 @@ function render(force) {
     '</div>' +
 
     renderMobileBar() +
-    renderNotesFab() +
-    renderNotesDrawer() +
 
     (state.showImport ? renderImportModal() : "") +
     (state.showSettings ? renderSettingsModal() : "");
@@ -1695,15 +1678,6 @@ var Notes = {
     save(); render(true);
   },
 
-  toggleDrawer: function() {
-    if (state.notesDrawerOpen) {
-      Notes.captureAll();
-      Notes.saveLocal();
-      if (state.cloudUrl && _cloudLoadDone) cloudSave();
-    }
-    state.notesDrawerOpen = !state.notesDrawerOpen;
-    render(true);
-  }
 };
 
 function loadNotes() { Notes.loadLocal(); }
@@ -1711,7 +1685,6 @@ function addQuickNote() { Notes.add(); }
 function saveNote(id) { Notes.save(id); }
 function deleteNote(id) { Notes.remove(id); }
 function noteToTask(id) { Notes.toTask(id); }
-function toggleNotesDrawer() { Notes.toggleDrawer(); }
 function onNoteType(id, el) { Notes.onType(id, el); }
 function onNoteBlur(id) { Notes.onBlur(id); }
 
@@ -1749,28 +1722,6 @@ function renderNotesContent() {
 
 function renderNotesPanel() {
   return '<div class="notes-panel"><div class="notes-panel-inner">' + renderNotesContent() + '</div></div>';
-}
-
-function renderNotesFab() {
-  if (state.notesDrawerOpen) return '';
-  var count = state.quickNotes.length;
-  return '<button class="notes-fab" onclick="toggleNotesDrawer()">' +
-    icon('note', 22) +
-    (count > 0 ? '<span class="notes-fab-count">' + count + '</span>' : '') +
-  '</button>';
-}
-
-function renderNotesDrawer() {
-  if (!state.notesDrawerOpen) return '';
-  return '<div class="notes-drawer-overlay" onclick="toggleNotesDrawer()"></div>' +
-    '<div class="notes-drawer open">' +
-      '<div class="notes-drawer-handle" onclick="toggleNotesDrawer()"></div>' +
-      '<div class="notes-drawer-top">' +
-        '<span class="notes-title">' + icon('note',12) + ' Quick Notes</span>' +
-        '<button class="notes-drawer-close" onclick="toggleNotesDrawer()">' + icon('close',16) + '</button>' +
-      '</div>' +
-      renderNotesContent() +
-    '</div>';
 }
 
 function toggleCompact(taskId) {
