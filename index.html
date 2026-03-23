@@ -605,7 +605,6 @@
 <div id="app"></div>
 
 <script>
-"use strict";
 
 /* Register service worker — forces browser to always load fresh */
 if ('serviceWorker' in navigator) {
@@ -1637,7 +1636,10 @@ var Notes = {
 
   onType: function(id, el) {
     var note = state.quickNotes.find(function(n) { return n.id === id; });
-    if (note) note.text = el.value;
+    if (note) {
+      note.text = el.value;
+      Notes.saveLocal();
+    }
   },
 
   onBlur: function(id) {
@@ -1731,7 +1733,7 @@ function renderNotesContent() {
     var d = new Date(n.created);
     var timeStr = d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) + " " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
     html += '<div class="note-card">' +
-      '<textarea class="note-text" id="qn-' + n.id + '" placeholder="Type a note..." oninput="onNoteType(\'' + n.id + '\',this)" onblur="onNoteBlur(\'' + n.id + '\')">' + esc(n.text) + '</textarea>' +
+      '<textarea class="note-text" id="qn-' + n.id + '" placeholder="Type a note..." oninput="onNoteType(\'' + n.id + '\',this)" onkeyup="onNoteType(\'' + n.id + '\',this)" onchange="onNoteType(\'' + n.id + '\',this)" onblur="onNoteBlur(\'' + n.id + '\')">' + esc(n.text) + '</textarea>' +
       '<div class="note-footer">' +
         '<span class="note-time">' + timeStr + '</span>' +
         '<div class="note-actions">' +
@@ -1993,6 +1995,20 @@ loadNotes();
 load();
 render();
 fetchMetalPricesFromCloud();
+
+/* Safety net: auto-save note text to localStorage every 2 seconds */
+setInterval(function() {
+  if (!state.quickNotes || state.quickNotes.length === 0) return;
+  var changed = false;
+  state.quickNotes.forEach(function(n) {
+    var el = document.getElementById("qn-" + n.id);
+    if (el && el.value !== n.text) {
+      n.text = el.value;
+      changed = true;
+    }
+  });
+  if (changed) Notes.saveLocal();
+}, 2000);
 
 </script>
 </body>
