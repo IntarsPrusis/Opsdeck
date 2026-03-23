@@ -1611,12 +1611,14 @@ var Notes = {
     if (note) {
       note.text = el.value;
       Notes.saveLocal();
+      _lastLocalChange = Date.now();
     }
   },
 
   onBlur: function(id) {
     Notes.captureAll();
     Notes.saveLocal();
+    _lastLocalChange = Date.now();
   },
 
   add: function() {
@@ -1627,6 +1629,7 @@ var Notes = {
       created: new Date().toISOString()
     });
     Notes.saveLocal();
+    _lastLocalChange = Date.now();
     render(true);
     setTimeout(function() {
       var el = document.getElementById("qn-" + state.quickNotes[0].id);
@@ -1949,7 +1952,10 @@ setInterval(function() {
       changed = true;
     }
   });
-  if (changed) Notes.saveLocal();
+  if (changed) {
+    Notes.saveLocal();
+    _lastLocalChange = Date.now();
+  }
 }, 2000);
 
 /* Cross-device sync: pull from cloud every 15 seconds */
