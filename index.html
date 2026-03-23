@@ -880,6 +880,7 @@ function cloudSave() {
   })
     .then(function() {
       state.syncStatus = "connected";
+      _notesDirty = false;
       updateSyncUI();
     })
     .catch(function(e) {
@@ -1600,6 +1601,7 @@ function toggleTheme() {
 var NOTES_KEY = "taskado-quick-notes";
 var _noteTyping = false;
 var _noteSaveTimer = null;
+var _notesDirty = false; // true when local notes have unsaved-to-cloud changes
 
 function loadNotes() {
   try {
@@ -1616,6 +1618,7 @@ function addQuickNote() {
     var el = document.getElementById("qn-" + n.id);
     if (el) n.text = el.value;
   });
+  _notesDirty = true;
   // Now add new empty note
   state.quickNotes.unshift({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
@@ -1632,6 +1635,7 @@ function addQuickNote() {
 }
 function onNoteInput(id, el) {
   _noteTyping = true;
+  _notesDirty = true;
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (note) {
     note.text = el.value;
@@ -1645,6 +1649,7 @@ function onNoteInput(id, el) {
 }
 
 function saveNote(id) {
+  _notesDirty = true;
   var el = document.getElementById("qn-" + id);
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (note && el) { note.text = el.value; }
@@ -1695,6 +1700,7 @@ function flushAllNotes() {
 }
 function deleteNote(id) {
   _noteTyping = false;
+  _notesDirty = true;
   // Save text of other notes before removing this one
   state.quickNotes.forEach(function(n) {
     if (n.id !== id) {
@@ -2056,7 +2062,7 @@ setInterval(function() {
 
 // Refresh notes from cloud every 30 seconds
 setInterval(function() {
-  if (!state.cloudUrl || !_cloudLoadDone || _noteTyping) return;
+  if (!state.cloudUrl || !_cloudLoadDone || _noteTyping || _notesDirty) return;
   // Flush current textarea values first
   state.quickNotes.forEach(function(n) {
     var el = document.getElementById("qn-" + n.id);
