@@ -1964,58 +1964,38 @@ setInterval(function() {
 /* Cross-device sync: pull from cloud every 10 seconds */
 setInterval(function() {
   if (!state.cloudUrl || !_cloudLoadDone) return;
-  // Step 1: capture all local textarea text so nothing is lost
   Notes.captureAll();
   Notes.saveLocal();
-  var localJSON = JSON.stringify(state.quickNotes);
-  // Step 2: fetch from cloud
   fetch(state.cloudUrl)
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (!Array.isArray(data) || data.length === 0) return;
-      // Extract cloud notes and tasks
+      if (!Array.isArray(data)) return;
       var cloudNotes = null;
       var cloudTasks = data.filter(function(item) {
         if (item && item._type === "quickNotes") { cloudNotes = item.notes || []; return false; }
         return true;
       });
-      // Step 3: merge notes — keep local text when cloud is empty
+      // Capture textarea text again (user may have typed during fetch)
+      Notes.captureAll();
+      // Merge notes: cloud structure wins, but keep local text if cloud text is empty
       if (cloudNotes !== null) {
-        Notes.captureAll(); // capture again in case user typed during fetch
         var localMap = {};
         state.quickNotes.forEach(function(n) { localMap[n.id] = n; });
         var merged = [];
         cloudNotes.forEach(function(cn) {
           var local = localMap[cn.id];
-          if (local && local.text && !cn.text) {
-            merged.push(local);
-          } else if (local && local.text && cn.text && local.text !== cn.text) {
-            // Both have text but differ — keep the longer/newer one
-            merged.push(local.text.length >= cn.text.length ? local : cn);
-          } else {
-            merged.push(cn);
-          }
+          merged.push(local && local.text && !cn.text ? local : cn);
           delete localMap[cn.id];
         });
         Object.keys(localMap).forEach(function(id) { merged.push(localMap[id]); });
-        var mergedJSON = JSON.stringify(merged);
-        if (mergedJSON !== localJSON) {
-          state.quickNotes = merged;
-          Notes.saveLocal();
-        }
+        state.quickNotes = merged;
+        Notes.saveLocal();
       }
-      // Update tasks too
-      var cloudTasksJSON = JSON.stringify(cloudTasks);
-      var localTasksJSON = JSON.stringify(state.tasks);
-      if (cloudTasksJSON !== localTasksJSON) {
-        state.tasks = cloudTasks;
-        sortTasks();
-        saveLocal();
-      }
-      // Re-render only if something changed
-      if (JSON.stringify(state.quickNotes) !== localJSON || cloudTasksJSON !== localTasksJSON) {
-        render(true);
-      }
+      // Tasks: cloud is source of truth — always accept
+      state.tasks = cloudTasks;
+      sortTasks();
+      saveLocal();
+      render(true);
       state.syncStatus = "connected";
       updateSyncUI();
     })
