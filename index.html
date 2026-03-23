@@ -768,6 +768,8 @@ let _pendingSaveFlash = false;
 var _cloudLoadDone = false;
 
 function save() {
+  Notes.captureAll();
+  Notes.saveLocal();
   saveLocal();
   _pendingSaveFlash = true;
   if (state.cloudUrl && _cloudLoadDone) cloudSave();
@@ -1607,28 +1609,24 @@ var Notes = {
     });
   },
 
+  // Keystroke: update state + localStorage, debounce save() 2 seconds
   onType: function(id, el) {
     var note = state.quickNotes.find(function(n) { return n.id === id; });
     if (note) {
       note.text = el.value;
       Notes.saveLocal();
-      // Push to cloud after 2 seconds of no typing
       clearTimeout(Notes._pushTimer);
-      Notes._pushTimer = setTimeout(function() {
-        Notes.captureAll();
-        Notes.saveLocal();
-        if (state.cloudUrl && _cloudLoadDone) cloudSave();
-      }, 2000);
+      Notes._pushTimer = setTimeout(function() { save(); }, 2000);
     }
   },
 
+  // Leave textarea: cancel debounce, save() immediately — same as task onblur
   onBlur: function(id) {
     clearTimeout(Notes._pushTimer);
-    Notes.captureAll();
-    Notes.saveLocal();
-    if (state.cloudUrl && _cloudLoadDone) cloudSave();
+    save();
   },
 
+  // Same as addTask()
   add: function() {
     Notes.captureAll();
     state.quickNotes.unshift({
@@ -1636,19 +1634,16 @@ var Notes = {
       text: "",
       created: new Date().toISOString()
     });
-    Notes.saveLocal();
-    if (state.cloudUrl && _cloudLoadDone) cloudSave();
-    render(true);
+    save(); render(true);
     setTimeout(function() {
       var el = document.getElementById("qn-" + state.quickNotes[0].id);
       if (el) el.focus();
     }, 60);
   },
 
+  // Same as any task edit — save() + visual feedback
   save: function(id) {
-    Notes.captureAll();
-    Notes.saveLocal();
-    if (state.cloudUrl && _cloudLoadDone) cloudSave();
+    save();
     var btn = document.querySelector('[data-nid="' + id + '"]');
     if (btn) {
       btn.textContent = "\u2713 Saved!";
@@ -1657,14 +1652,14 @@ var Notes = {
     }
   },
 
+  // Same as deleteTask()
   remove: function(id) {
     Notes.captureAll();
     state.quickNotes = state.quickNotes.filter(function(n) { return n.id !== id; });
-    Notes.saveLocal();
-    if (state.cloudUrl && _cloudLoadDone) cloudSave();
-    render(true);
+    save(); render(true);
   },
 
+  // Modify both tasks + notes, save()
   toTask: function(id) {
     Notes.captureAll();
     var note = state.quickNotes.find(function(n) { return n.id === id; });
@@ -1674,7 +1669,6 @@ var Notes = {
       createdDate: todayStr(), endDate: null, completed: false, subtasks: []
     });
     state.quickNotes = state.quickNotes.filter(function(n) { return n.id !== id; });
-    Notes.saveLocal();
     save(); render(true);
   },
 
