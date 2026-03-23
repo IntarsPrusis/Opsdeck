@@ -166,6 +166,10 @@
 
   .mobile-top-bar { display: none; align-items: center; gap: 10px; padding: 14px 14px 0; }
   .mobile-top-bar svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .mob-sync-logo { display: flex; --sync-bg: var(--surface-sec); --sync-fg: var(--t3); transition: all 0.3s; }
+  .mob-sync-logo.connected { --sync-bg: rgba(107,203,139,0.2); --sync-fg: var(--green); }
+  .mob-sync-logo.syncing { --sync-bg: rgba(107,164,235,0.2); --sync-fg: var(--blue); animation: pulse-sync 1.2s ease-in-out infinite; }
+  .mob-sync-logo.error { --sync-bg: rgba(224,124,124,0.2); --sync-fg: var(--red); }
   .mobile-top-bar .mob-brand-name { font-size: 16px; font-weight: 700; color: var(--t1); margin-right: auto; }
   .mobile-top-bar .mob-date { font-size: 10px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
   .stats-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
@@ -470,6 +474,8 @@
   .note-act-btn { background: none; border: none; cursor: pointer; color: var(--t3); padding: 2px; transition: color 0.15s; display: inline-flex; }
   .note-act-btn:hover { color: var(--accent); }
   .note-act-btn.del:hover { color: var(--red); }
+  .note-save-btn { font-size: 9px; color: var(--green); background: var(--green-bg); border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-weight: 600; font-family: inherit; transition: all 0.15s; }
+  .note-save-btn:hover { background: rgba(107,203,139,0.2); }
   .note-to-task { font-size: 9px; color: var(--accent); background: var(--accent-bg); border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-weight: 600; font-family: inherit; transition: all 0.15s; }
   .note-to-task:hover { background: rgba(124,141,181,0.2); }
   .note-empty { font-size: 11px; color: var(--t3); text-align: center; padding: 20px 0; font-style: italic; }
@@ -805,10 +811,11 @@ function flashSaveIndicator() {
 
 /* ——— CLOUD SYNC ——— */
 function updateSyncUI() {
-  var el = document.getElementById("syncStatus");
-  if (!el) return;
   var s = state.syncStatus;
-  el.className = "sidebar-brand " + s;
+  var el = document.getElementById("syncStatus");
+  if (el) el.className = "sidebar-brand " + s;
+  var mob = document.getElementById("mobileSyncLogo");
+  if (mob) mob.className = "mob-sync-logo " + s;
 }
 
 function cloudLoad() {
@@ -963,7 +970,9 @@ function render(force) {
     '<div class="page-wrap">' +
       renderSidebar() +
       '<div class="main-area">' +
-        '<div class="mobile-top-bar">' + LOGO_SVG + '<span class="mob-brand-name">TaskaDo</span>' +
+        '<div class="mobile-top-bar">' +
+          '<span id="mobileSyncLogo" class="mob-sync-logo"><svg width="28" height="28" viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="8" fill="var(--sync-bg)"/><rect x="1" y="1" width="28" height="28" rx="7" stroke="white" stroke-opacity="0.1" stroke-width="0.5"/><path d="M8 10H22M15 10V22" stroke="var(--sync-fg)" stroke-width="3" stroke-linecap="round"/><circle cx="15" cy="22" r="1.5" fill="var(--sync-fg)" opacity="0.7"/></svg></span>' +
+          '<span class="mob-brand-name">TaskaDo</span>' +
           '<span class="mob-date">' + icon('calendar',11) + ' ' + new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) + '</span>' +
         '</div>' +
         '<div class="container">' +
@@ -1587,6 +1596,15 @@ function onNoteInput(id, el) {
     saveNotes();
   }, 400);
 }
+
+function saveNote(id) {
+  var el = document.getElementById("qn-" + id);
+  var note = state.quickNotes.find(function(n){ return n.id === id; });
+  if (note && el) { note.text = el.value; }
+  saveNotes();
+  _noteTyping = false;
+  render(true);
+}
 function onNoteBlur(id) {
   var el = document.getElementById("qn-" + id);
   var note = state.quickNotes.find(function(n){ return n.id === id; });
@@ -1670,6 +1688,7 @@ function renderNotesContent() {
       '<div class="note-footer">' +
         '<span class="note-time">' + timeStr + '</span>' +
         '<div class="note-actions">' +
+          '<button class="note-save-btn" onclick="saveNote(\'' + n.id + '\')" title="Save note">' + icon('check',9) + ' Save</button>' +
           '<button class="note-to-task" onclick="noteToTask(\'' + n.id + '\')" title="Convert to task">' + icon('plus',9) + ' Task</button>' +
           '<button class="note-act-btn del" onclick="deleteNote(\'' + n.id + '\')" title="Delete">' + icon('close',11) + '</button>' +
         '</div>' +
