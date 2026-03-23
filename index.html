@@ -767,10 +767,12 @@ let _saveHideTimer = null;
 let _pendingSaveFlash = false;
 let _cloudSaveTimer = null;
 var _cloudLoadDone = false;
+var _lastLocalChange = 0;
 
 function save() {
   saveLocal();
   _pendingSaveFlash = true;
+  _lastLocalChange = Date.now();
   // Debounce cloud save (wait 800ms after last change)
   clearTimeout(_cloudSaveTimer);
   if (state.cloudUrl) {
@@ -1635,6 +1637,7 @@ var Notes = {
   save: function(id) {
     Notes.captureAll();
     Notes.saveLocal();
+    _lastLocalChange = Date.now();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
     var btn = document.querySelector('[data-nid="' + id + '"]');
     if (btn) {
@@ -1648,6 +1651,7 @@ var Notes = {
     Notes.captureAll();
     state.quickNotes = state.quickNotes.filter(function(n) { return n.id !== id; });
     Notes.saveLocal();
+    _lastLocalChange = Date.now();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
     render(true);
   },
@@ -1951,6 +1955,8 @@ setInterval(function() {
 /* Cross-device sync: pull from cloud every 10 seconds */
 setInterval(function() {
   if (!state.cloudUrl || !_cloudLoadDone) return;
+  // Skip if local changes were made in the last 5 seconds — cloud hasn't received them yet
+  if (Date.now() - _lastLocalChange < 5000) return;
   Notes.captureAll();
   Notes.saveLocal();
   fetch(state.cloudUrl)
@@ -1979,8 +1985,9 @@ setInterval(function() {
       state.tasks = cloudTasks;
       sortTasks();
       saveLocal();
-      // Only re-render if user is NOT typing in a note
-      var typing = document.activeElement && document.activeElement.classList.contains("note-text");
+      // Only re-render if user is NOT typing in any input/textarea
+      var ae = document.activeElement;
+      var typing = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA");
       if (!typing) render(true);
       state.syncStatus = "connected";
       updateSyncUI();
