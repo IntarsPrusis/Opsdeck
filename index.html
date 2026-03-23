@@ -975,6 +975,16 @@ function render(force) {
     return; // Don't rebuild DOM while typing
   }
   _forceRender = false;
+  // Capture all note textarea values BEFORE destroying DOM
+  // This catches text even if oninput didn't fire (mobile quirk)
+  if (state.quickNotes && state.quickNotes.length > 0) {
+    var _changed = false;
+    state.quickNotes.forEach(function(n) {
+      var el = document.getElementById("qn-" + n.id);
+      if (el && el.value !== n.text) { n.text = el.value; _changed = true; }
+    });
+    if (_changed) saveNotes();
+  }
   const tasks = state.tasks.filter(function(t) {
     if (state.filter === "active" && t.completed) return false;
     if (state.filter === "completed" && !t.completed) return false;
@@ -2033,9 +2043,25 @@ load();
 render();
 fetchMetalPricesFromCloud();
 
+// Auto-save note text every 3 seconds (catches mobile input quirks)
+setInterval(function() {
+  if (!state.quickNotes || state.quickNotes.length === 0) return;
+  var changed = false;
+  state.quickNotes.forEach(function(n) {
+    var el = document.getElementById("qn-" + n.id);
+    if (el && el.value !== n.text) { n.text = el.value; changed = true; }
+  });
+  if (changed) saveNotes();
+}, 3000);
+
 // Refresh notes from cloud every 30 seconds
 setInterval(function() {
   if (!state.cloudUrl || !_cloudLoadDone || _noteTyping) return;
+  // Flush current textarea values first
+  state.quickNotes.forEach(function(n) {
+    var el = document.getElementById("qn-" + n.id);
+    if (el) n.text = el.value;
+  });
   fetch(state.cloudUrl).then(function(r){return r.json();}).then(function(data){
     if (Array.isArray(data) && data.length > 0) {
       var cn = null;
