@@ -765,19 +765,12 @@ function saveLocal() {
 
 let _saveHideTimer = null;
 let _pendingSaveFlash = false;
-let _cloudSaveTimer = null;
 var _cloudLoadDone = false;
-var _lastLocalChange = 0;
 
 function save() {
   saveLocal();
   _pendingSaveFlash = true;
-  _lastLocalChange = Date.now();
-  // Debounce cloud save (wait 800ms after last change)
-  clearTimeout(_cloudSaveTimer);
-  if (state.cloudUrl) {
-    _cloudSaveTimer = setTimeout(cloudSave, 800);
-  }
+  if (state.cloudUrl && _cloudLoadDone) cloudSave();
 }
 
 function flashSaveIndicator() {
@@ -990,6 +983,7 @@ function render(force) {
         '<div class="mobile-top-bar">' +
           '<span id="mobileSyncLogo" class="mob-sync-logo"><svg width="28" height="28" viewBox="0 0 30 30" fill="none"><rect width="30" height="30" rx="8" fill="var(--sync-bg)"/><rect x="1" y="1" width="28" height="28" rx="7" stroke="white" stroke-opacity="0.1" stroke-width="0.5"/><path d="M8 10H22M15 10V22" stroke="var(--sync-fg)" stroke-width="3" stroke-linecap="round"/><circle cx="15" cy="22" r="1.5" fill="var(--sync-fg)" opacity="0.7"/></svg></span>' +
           '<span class="mob-brand-name">TaskaDo</span>' +
+          '<button onclick="refreshFromCloud()" style="background:none;border:1px solid var(--border-s);color:var(--t2);border-radius:6px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:10px;font-family:inherit;font-weight:500"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M8 2.5V6M8 2.5L11 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Sync</button>' +
           '<span class="mob-date">' + icon('calendar',11) + ' ' + new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) + '</span>' +
         '</div>' +
         '<div class="container">' +
@@ -1072,6 +1066,9 @@ function renderSidebar() {
   });
   html += '</div>' +
     '<div class="sidebar-bottom">' +
+      '<button class="nav-item" onclick="refreshFromCloud()">' +
+        '<span class="nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5M8 2.5V6M8 2.5L11 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Refresh' +
+      '</button>' +
       '<button class="nav-item" onclick="toggleTheme()">' +
         '<span class="nav-icon">' + (state.darkMode ? icon('sun',16) : icon('moon',16)) + '</span>' +
         (state.darkMode ? 'Light Mode' : 'Dark Mode') +
@@ -1611,14 +1608,13 @@ var Notes = {
     if (note) {
       note.text = el.value;
       Notes.saveLocal();
-      _lastLocalChange = Date.now();
     }
   },
 
   onBlur: function(id) {
     Notes.captureAll();
     Notes.saveLocal();
-    _lastLocalChange = Date.now();
+    if (state.cloudUrl && _cloudLoadDone) cloudSave();
   },
 
   add: function() {
@@ -1629,7 +1625,7 @@ var Notes = {
       created: new Date().toISOString()
     });
     Notes.saveLocal();
-    _lastLocalChange = Date.now();
+    if (state.cloudUrl && _cloudLoadDone) cloudSave();
     render(true);
     setTimeout(function() {
       var el = document.getElementById("qn-" + state.quickNotes[0].id);
@@ -1640,7 +1636,6 @@ var Notes = {
   save: function(id) {
     Notes.captureAll();
     Notes.saveLocal();
-    _lastLocalChange = Date.now();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
     var btn = document.querySelector('[data-nid="' + id + '"]');
     if (btn) {
@@ -1654,7 +1649,6 @@ var Notes = {
     Notes.captureAll();
     state.quickNotes = state.quickNotes.filter(function(n) { return n.id !== id; });
     Notes.saveLocal();
-    _lastLocalChange = Date.now();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
     render(true);
   },
@@ -1934,37 +1928,13 @@ function fetchSheet() {
     });
 }
 
-/* ——— INIT ——— */
-loadTheme();
-loadNotes();
-load();
-render();
-fetchMetalPricesFromCloud();
-
-/* Safety net: auto-save note text to localStorage every 2 seconds */
-setInterval(function() {
-  if (!state.quickNotes || state.quickNotes.length === 0) return;
-  var changed = false;
-  state.quickNotes.forEach(function(n) {
-    var el = document.getElementById("qn-" + n.id);
-    if (el && el.value !== n.text) {
-      n.text = el.value;
-      changed = true;
-    }
-  });
-  if (changed) {
-    Notes.saveLocal();
-    _lastLocalChange = Date.now();
-  }
-}, 2000);
-
-/* Cross-device sync: pull from cloud every 15 seconds */
-setInterval(function() {
-  if (!state.cloudUrl || !_cloudLoadDone) return;
-  // Skip if local changes were made in the last 10 seconds — cloud POST may still be in flight
-  if (Date.now() - _lastLocalChange < 10000) return;
+/* ——— MANUAL REFRESH — pull latest from cloud ——— */
+function refreshFromCloud() {
+  if (!state.cloudUrl) { alert("Set up cloud sync in Settings first."); return; }
   Notes.captureAll();
   Notes.saveLocal();
+  state.syncStatus = "syncing";
+  updateSyncUI();
   fetch(state.cloudUrl)
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -1974,32 +1944,31 @@ setInterval(function() {
         if (item && item._type === "quickNotes") { cloudNotes = item.notes || []; return false; }
         return true;
       });
-      // Capture textarea text again (user may have typed during fetch)
-      Notes.captureAll();
-      // Notes: cloud is source of truth — same as tasks
       if (cloudNotes !== null) {
-        var localMap = {};
-        state.quickNotes.forEach(function(n) { localMap[n.id] = n; });
-        cloudNotes.forEach(function(cn) {
-          var local = localMap[cn.id];
-          if (local && local.text && !cn.text) cn.text = local.text;
-        });
         state.quickNotes = cloudNotes;
         Notes.saveLocal();
       }
-      // Tasks: cloud is source of truth — always accept
       state.tasks = cloudTasks;
       sortTasks();
       saveLocal();
-      // Only re-render if user is NOT typing in any input/textarea
-      var ae = document.activeElement;
-      var typing = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA");
-      if (!typing) render(true);
       state.syncStatus = "connected";
       updateSyncUI();
+      render(true);
     })
-    .catch(function() {});
-}, 15000);
+    .catch(function(e) {
+      state.syncStatus = "error";
+      updateSyncUI();
+      alert("Refresh failed: " + e.message);
+    });
+}
+
+/* ——— INIT ——— */
+loadTheme();
+loadNotes();
+load();
+render();
+fetchMetalPricesFromCloud();
+
 
 </script>
 </body>
