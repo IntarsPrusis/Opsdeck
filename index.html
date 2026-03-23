@@ -1952,11 +1952,11 @@ setInterval(function() {
   if (changed) Notes.saveLocal();
 }, 2000);
 
-/* Cross-device sync: pull from cloud every 10 seconds */
+/* Cross-device sync: pull from cloud every 15 seconds */
 setInterval(function() {
   if (!state.cloudUrl || !_cloudLoadDone) return;
-  // Skip if local changes were made in the last 5 seconds — cloud hasn't received them yet
-  if (Date.now() - _lastLocalChange < 5000) return;
+  // Skip if local changes were made in the last 10 seconds — cloud POST may still be in flight
+  if (Date.now() - _lastLocalChange < 10000) return;
   Notes.captureAll();
   Notes.saveLocal();
   fetch(state.cloudUrl)
@@ -1993,7 +1993,7 @@ setInterval(function() {
       updateSyncUI();
     })
     .catch(function() {});
-}, 10000);
+}, 15000);
 
 </script>
 </body>
