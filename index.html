@@ -118,12 +118,6 @@
   body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); min-height: 100vh; color: var(--t1); -webkit-font-smoothing: antialiased; }
   input, select, textarea, button { font-family: inherit; }
 
-
-
-
-
-
-
   .btn-outline { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border-s); background: var(--surface-sec); color: var(--t2); font-size: 12px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
   .btn-outline:hover { background: var(--surface-hover); color: var(--t1); border-color: var(--border-s); }
   .btn-primary { display: inline-flex; align-items: center; gap: 5px; padding: 7px 16px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-size: 12px; cursor: pointer; font-weight: 600; transition: all 0.15s; box-shadow: 0 2px 8px rgba(124,141,181,0.25); }
@@ -270,7 +264,6 @@
 
   /* Row 3: preview strip (notes + links) */
   /* Metal prices strip */
-
 
   /* Row 3: expand/collapse button */
   .sub-expand-row { padding: 4px 14px 10px 44px; }
@@ -932,17 +925,17 @@ function testCloudConnection(url, callback) {
 
 // Save to cloud when closing tab
 window.addEventListener("beforeunload", function() {
-  captureAllNoteText();
-  saveNotesLocal();
+  Notes.captureAll();
+  Notes.saveLocal();
   saveLocal();
   if (state.cloudUrl && navigator.sendBeacon) {
-    if (_cloudLoadDone) { var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp)); }
+    if (_cloudLoadDone) { Notes.captureAll(); var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp)); }
   }
 });
 document.addEventListener("visibilitychange", function() {
   if (document.visibilityState === "hidden") {
-    captureAllNoteText();
-    saveNotesLocal();
+    Notes.captureAll();
+    Notes.saveLocal();
     saveLocal();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
   }
@@ -990,8 +983,8 @@ function subtaskReminderText(s) {
 
 /* ——— RENDER ——— */
 function render(force) {
-  // Capture note textarea values before rebuilding DOM (safety net)
-  captureAllNoteText();
+  // Always capture note text before DOM rebuild
+  Notes.captureAll();
   const tasks = state.tasks.filter(function(t) {
     if (state.filter === "active" && t.completed) return false;
     if (state.filter === "completed" && !t.completed) return false;
@@ -1603,104 +1596,116 @@ function toggleTheme() {
   render();
 }
 
-/* ——— QUICK NOTES (simplified: oninput keeps state synced, Save pushes to cloud) ——— */
+/* ================================================================
+   MODULE: QUICK NOTES — Self-contained, no timers, no background sync
+   
+   DATA FLOW:
+   - oninput  -> Notes.onType()  -> state updated immediately
+   - onblur   -> Notes.onBlur()  -> localStorage saved
+   - Save btn -> Notes.save()    -> localStorage + cloud push, NO render
+   - Delete   -> Notes.remove()  -> localStorage + cloud + render
+   - Drawer close -> capture + save + cloud
+   - Page close   -> capture + save + beacon
+   ================================================================ */
 var NOTES_KEY = "taskado-quick-notes";
 
-function loadNotes() {
-  try {
-    var raw = localStorage.getItem(NOTES_KEY);
-    state.quickNotes = raw ? JSON.parse(raw) : [];
-  } catch(e) { state.quickNotes = []; }
-}
+var Notes = {
+  loadLocal: function() {
+    try {
+      var raw = localStorage.getItem(NOTES_KEY);
+      state.quickNotes = raw ? JSON.parse(raw) : [];
+    } catch(e) { state.quickNotes = []; }
+  },
 
-function saveNotesLocal() {
-  try { localStorage.setItem(NOTES_KEY, JSON.stringify(state.quickNotes)); } catch(e) {}
-}
+  saveLocal: function() {
+    try { localStorage.setItem(NOTES_KEY, JSON.stringify(state.quickNotes)); } catch(e) {}
+  },
 
-// Called by oninput on every keystroke — keeps state always in sync
-function onNoteType(id, el) {
-  var note = state.quickNotes.find(function(n){ return n.id === id; });
-  if (note) note.text = el.value;
-}
+  captureAll: function() {
+    if (!state.quickNotes) return;
+    state.quickNotes.forEach(function(n) {
+      var el = document.getElementById("qn-" + n.id);
+      if (el) n.text = el.value;
+    });
+  },
 
-// Read all visible textareas into state (safety net before DOM rebuild)
-function captureAllNoteText() {
-  if (!state.quickNotes) return;
-  state.quickNotes.forEach(function(n) {
-    var el = document.getElementById("qn-" + n.id);
-    if (el) n.text = el.value;
-  });
-}
+  onType: function(id, el) {
+    var note = state.quickNotes.find(function(n) { return n.id === id; });
+    if (note) note.text = el.value;
+  },
 
-function addQuickNote() {
-  captureAllNoteText();
-  state.quickNotes.unshift({
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-    text: "",
-    created: new Date().toISOString()
-  });
-  saveNotesLocal();
-  render(true);
-  setTimeout(function(){
-    var el = document.getElementById("qn-" + state.quickNotes[0].id);
-    if (el) el.focus();
-  }, 50);
-}
+  onBlur: function(id) {
+    Notes.captureAll();
+    Notes.saveLocal();
+  },
 
-function saveNote(id) {
-  // Capture ALL textareas (not just this one)
-  captureAllNoteText();
-  saveNotesLocal();
-  // Push to cloud immediately
-  if (state.cloudUrl && _cloudLoadDone) cloudSave();
-  // Visual feedback — NO render(), just swap button text
-  var btn = document.querySelector('[data-nid="' + id + '"]');
-  if (btn) {
-    btn.textContent = '\u2713 Saved!';
-    btn.style.color = 'var(--green)';
-    setTimeout(function(){
-      if (btn) { btn.textContent = 'Save'; btn.style.color = ''; }
-    }, 1200);
-  }
-}
+  add: function() {
+    Notes.captureAll();
+    state.quickNotes.unshift({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      text: "",
+      created: new Date().toISOString()
+    });
+    Notes.saveLocal();
+    render(true);
+    setTimeout(function() {
+      var el = document.getElementById("qn-" + state.quickNotes[0].id);
+      if (el) el.focus();
+    }, 60);
+  },
 
-function deleteNote(id) {
-  captureAllNoteText();
-  state.quickNotes = state.quickNotes.filter(function(n){ return n.id !== id; });
-  saveNotesLocal();
-  if (state.cloudUrl && _cloudLoadDone) cloudSave();
-  render(true);
-}
-
-function noteToTask(id) {
-  captureAllNoteText();
-  var note = state.quickNotes.find(function(n){ return n.id === id; });
-  if (!note || !note.text.trim()) { alert("Type something first"); return; }
-  state.tasks.push({
-    id: genId(),
-    description: note.text.trim(),
-    priority: "medium",
-    createdDate: todayStr(),
-    endDate: null,
-    completed: false,
-    subtasks: []
-  });
-  state.quickNotes = state.quickNotes.filter(function(n){ return n.id !== id; });
-  saveNotesLocal();
-  save();
-  render(true);
-}
-
-function toggleNotesDrawer() {
-  if (state.notesDrawerOpen) {
-    // Closing — save everything
-    captureAllNoteText();
-    saveNotesLocal();
+  save: function(id) {
+    Notes.captureAll();
+    Notes.saveLocal();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
+    var btn = document.querySelector('[data-nid="' + id + '"]');
+    if (btn) {
+      btn.textContent = "\u2713 Saved!";
+      btn.style.color = "var(--green)";
+      setTimeout(function() { if (btn) { btn.textContent = "Save"; btn.style.color = ""; } }, 1200);
+    }
+  },
+
+  remove: function(id) {
+    Notes.captureAll();
+    state.quickNotes = state.quickNotes.filter(function(n) { return n.id !== id; });
+    Notes.saveLocal();
+    if (state.cloudUrl && _cloudLoadDone) cloudSave();
+    render(true);
+  },
+
+  toTask: function(id) {
+    Notes.captureAll();
+    var note = state.quickNotes.find(function(n) { return n.id === id; });
+    if (!note || !note.text.trim()) { alert("Type something first"); return; }
+    state.tasks.push({
+      id: genId(), description: note.text.trim(), priority: "medium",
+      createdDate: todayStr(), endDate: null, completed: false, subtasks: []
+    });
+    state.quickNotes = state.quickNotes.filter(function(n) { return n.id !== id; });
+    Notes.saveLocal();
+    save(); render(true);
+  },
+
+  toggleDrawer: function() {
+    if (state.notesDrawerOpen) {
+      Notes.captureAll();
+      Notes.saveLocal();
+      if (state.cloudUrl && _cloudLoadDone) cloudSave();
+    }
+    state.notesDrawerOpen = !state.notesDrawerOpen;
+    render(true);
   }
-  state.notesDrawerOpen = !state.notesDrawerOpen;
-  render(true);
-}
+};
+
+function loadNotes() { Notes.loadLocal(); }
+function addQuickNote() { Notes.add(); }
+function saveNote(id) { Notes.save(id); }
+function deleteNote(id) { Notes.remove(id); }
+function noteToTask(id) { Notes.toTask(id); }
+function toggleNotesDrawer() { Notes.toggleDrawer(); }
+function onNoteType(id, el) { Notes.onType(id, el); }
+function onNoteBlur(id) { Notes.onBlur(id); }
 
 function autoResizeNote(el) {
   el.style.height = 'auto';
@@ -1720,7 +1725,7 @@ function renderNotesContent() {
     var d = new Date(n.created);
     var timeStr = d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) + " " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
     html += '<div class="note-card">' +
-      '<textarea class="note-text" id="qn-' + n.id + '" placeholder="Type a note..." oninput="onNoteType(\'' + n.id + '\',this)" onblur="saveNotesLocal()">' + esc(n.text) + '</textarea>' +
+      '<textarea class="note-text" id="qn-' + n.id + '" placeholder="Type a note..." oninput="onNoteType(\'' + n.id + '\',this)" onblur="onNoteBlur(\'' + n.id + '\')">' + esc(n.text) + '</textarea>' +
       '<div class="note-footer">' +
         '<span class="note-time">' + timeStr + '</span>' +
         '<div class="note-actions">' +
@@ -1982,7 +1987,6 @@ loadNotes();
 load();
 render();
 fetchMetalPricesFromCloud();
-
 
 </script>
 </body>
