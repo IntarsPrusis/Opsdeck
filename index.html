@@ -1979,7 +1979,9 @@ setInterval(function() {
       state.tasks = cloudTasks;
       sortTasks();
       saveLocal();
-      render(true);
+      // Only re-render if user is NOT typing in a note
+      var typing = document.activeElement && document.activeElement.classList.contains("note-text");
+      if (!typing) render(true);
       state.syncStatus = "connected";
       updateSyncUI();
     })
