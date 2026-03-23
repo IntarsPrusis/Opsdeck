@@ -1740,20 +1740,37 @@ function noteToTask(id) {
 
 function syncNotesNow() {
   if (!state.cloudUrl) { alert("Set up cloud sync in Settings first"); return; }
-  fetch(state.cloudUrl).then(function(r){return r.json();}).then(function(data){
+  // Save current text first
+  state.quickNotes.forEach(function(n) {
+    var el = document.getElementById("qn-" + n.id);
+    if (el) n.text = el.value;
+  });
+  saveNotes();
+  // Push local to cloud first, then pull
+  var payload = state.tasks.slice();
+  payload.push({ _type: "quickNotes", notes: state.quickNotes || [] });
+  fetch(state.cloudUrl, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload),
+    redirect: "follow"
+  }).then(function() {
+    // Now pull latest
+    return fetch(state.cloudUrl);
+  }).then(function(r) { return r.json(); }).then(function(data) {
     if (Array.isArray(data) && data.length > 0) {
       var cn = null;
-      data.forEach(function(item) {
-        if (item && item._type === "quickNotes") cn = item.notes || [];
+      state.tasks = data.filter(function(item) {
+        if (item && item._type === "quickNotes") { cn = item.notes || []; return false; }
+        return true;
       });
-      if (cn !== null) {
-        state.quickNotes = cn;
-        saveNotes();
-      }
+      if (cn !== null) { state.quickNotes = cn; saveNotes(); }
+      sortTasks(); saveLocal();
     }
     _noteTyping = false;
+    _notesDirty = false;
     render(true);
-  }).catch(function(e){ alert("Sync failed: " + e.message); });
+  }).catch(function(e) { alert("Sync failed: " + e.message); });
 }
 function toggleNotesDrawer() {
   if (state.notesDrawerOpen) {
@@ -2060,28 +2077,8 @@ setInterval(function() {
   if (changed) saveNotes();
 }, 3000);
 
-// Refresh notes from cloud every 30 seconds
-setInterval(function() {
-  if (!state.cloudUrl || !_cloudLoadDone || _noteTyping || _notesDirty) return;
-  // Flush current textarea values first
-  state.quickNotes.forEach(function(n) {
-    var el = document.getElementById("qn-" + n.id);
-    if (el) n.text = el.value;
-  });
-  fetch(state.cloudUrl).then(function(r){return r.json();}).then(function(data){
-    if (Array.isArray(data) && data.length > 0) {
-      var cn = null;
-      data.forEach(function(item) {
-        if (item && item._type === "quickNotes") cn = item.notes || [];
-      });
-      if (cn !== null && JSON.stringify(cn) !== JSON.stringify(state.quickNotes)) {
-        state.quickNotes = cn;
-        saveNotes();
-        if (!_noteTyping) render(true);
-      }
-    }
-  }).catch(function(){});
-}, 30000);
+// Notes sync on: page load (cloudLoad), save button, close drawer, page close
+// No auto-refresh timer — it causes stale cloud data to overwrite local text
 </script>
 </body>
 </html>
