@@ -851,6 +851,8 @@ function cloudLoad() {
 function cloudSave() {
   if (!state.cloudUrl) return;
   if (!_cloudLoadDone) return; // Don't push until we've loaded from cloud first
+  // Always read latest textarea text before sending
+  Notes.captureAll();
   state.syncStatus = "syncing";
   updateSyncUI();
   var payload = state.tasks.slice();
