@@ -826,12 +826,20 @@ function cloudLoad() {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (Array.isArray(data) && data.length > 0) {
-        state.tasks = data;
+        // Extract embedded quick notes if present
+        var cloudNotes = null;
+        state.tasks = data.filter(function(item) {
+          if (item && item._type === "quickNotes") { cloudNotes = item.notes || []; return false; }
+          return true;
+        });
+        if (cloudNotes !== null) {
+          state.quickNotes = cloudNotes;
+          saveNotes();
+        }
         sortTasks();
-        saveLocal(); // cache cloud data locally
-        render();
+        saveLocal();
+        render(true);
       } else if (Array.isArray(data) && data.length === 0 && state.tasks.length > 0) {
-        // Cloud is empty but we have local data — push local to cloud
         cloudSave();
       }
       state.syncStatus = "connected";
@@ -848,10 +856,12 @@ function cloudSave() {
   if (!state.cloudUrl) return;
   state.syncStatus = "syncing";
   updateSyncUI();
+  var payload = state.tasks.slice();
+  payload.push({ _type: "quickNotes", notes: state.quickNotes || [] });
   fetch(state.cloudUrl, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(state.tasks),
+    body: JSON.stringify(payload),
     redirect: "follow"
   })
     .then(function() {
@@ -885,7 +895,7 @@ window.addEventListener("beforeunload", function() {
   flushAllNotes();
   saveLocal();
   if (state.cloudUrl && navigator.sendBeacon) {
-    navigator.sendBeacon(state.cloudUrl, JSON.stringify(state.tasks));
+    var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp));
   }
 });
 document.addEventListener("visibilitychange", function() {
@@ -1576,6 +1586,7 @@ function addQuickNote() {
     created: new Date().toISOString()
   });
   saveNotes();
+  if (state.cloudUrl) cloudSave();
   _noteTyping = false;
   render(true);
   setTimeout(function(){
@@ -1602,16 +1613,17 @@ function saveNote(id) {
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (note && el) { note.text = el.value; }
   saveNotes();
-  // Visual confirmation without destroying DOM
-  var btn = event && event.target ? event.target.closest('.note-save-btn') : null;
-  if (btn) {
-    btn.textContent = 'Saved!';
-    btn.style.color = 'var(--green)';
-    setTimeout(function() { _noteTyping = false; render(true); }, 800);
-  } else {
-    _noteTyping = false;
-    render(true);
-  }
+  // Also push to cloud
+  if (state.cloudUrl) cloudSave();
+  // Flash the save button green
+  var btns = document.querySelectorAll('.note-save-btn');
+  btns.forEach(function(b) {
+    if (b.getAttribute('data-nid') === id) {
+      b.innerHTML = '\u2713 Saved';
+      b.style.color = 'var(--green)';
+    }
+  });
+  setTimeout(function() { _noteTyping = false; }, 300);
 }
 function onNoteBlur(id) {
   var el = document.getElementById("qn-" + id);
@@ -1644,6 +1656,7 @@ function deleteNote(id) {
   _noteTyping = false;
   state.quickNotes = state.quickNotes.filter(function(n){ return n.id !== id; });
   saveNotes();
+  if (state.cloudUrl) cloudSave();
   render(true);
 }
 function noteToTask(id) {
@@ -1662,7 +1675,8 @@ function noteToTask(id) {
     completed: false,
     subtasks: []
   });
-  deleteNote(id);
+  state.quickNotes = state.quickNotes.filter(function(n){ return n.id !== id; });
+  saveNotes();
   save();
   render(true);
 }
@@ -1693,7 +1707,7 @@ function renderNotesContent() {
       '<div class="note-footer">' +
         '<span class="note-time">' + timeStr + '</span>' +
         '<div class="note-actions">' +
-          '<button class="note-save-btn" onmousedown="event.preventDefault()" onclick="saveNote(\'' + n.id + '\')" title="Save note">' + icon('check',9) + ' Save</button>' +
+          '<button class="note-save-btn" data-nid="' + n.id + '" onmousedown="event.preventDefault()" onclick="saveNote(\'' + n.id + '\')" title="Save note">' + icon('check',9) + ' Save</button>' +
           '<button class="note-to-task" onmousedown="event.preventDefault()" onclick="noteToTask(\'' + n.id + '\')" title="Convert to task">' + icon('plus',9) + ' Task</button>' +
           '<button class="note-act-btn del" onmousedown="event.preventDefault()" onclick="deleteNote(\'' + n.id + '\')" title="Delete">' + icon('close',11) + '</button>' +
         '</div>' +
