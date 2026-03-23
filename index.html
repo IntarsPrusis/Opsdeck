@@ -765,6 +765,8 @@ function load() {
   // Then try cloud
   if (state.cloudUrl) {
     cloudLoad();
+  } else {
+    _cloudLoadDone = true;
   }
 }
 
@@ -778,6 +780,7 @@ function saveLocal() {
 let _saveHideTimer = null;
 let _pendingSaveFlash = false;
 let _cloudSaveTimer = null;
+var _cloudLoadDone = false;
 
 function save() {
   saveLocal();
@@ -838,15 +841,20 @@ function cloudLoad() {
         }
         sortTasks();
         saveLocal();
+        _cloudLoadDone = true;
         render(true);
       } else if (Array.isArray(data) && data.length === 0 && state.tasks.length > 0) {
+        _cloudLoadDone = true;
         cloudSave();
+      } else {
+        _cloudLoadDone = true;
       }
       state.syncStatus = "connected";
       updateSyncUI();
     })
     .catch(function(e) {
       console.error("Cloud load failed:", e);
+      _cloudLoadDone = true; // allow saves even if load failed
       state.syncStatus = "error";
       updateSyncUI();
     });
@@ -854,6 +862,7 @@ function cloudLoad() {
 
 function cloudSave() {
   if (!state.cloudUrl) return;
+  if (!_cloudLoadDone) return; // Don't push until we've loaded from cloud first
   state.syncStatus = "syncing";
   updateSyncUI();
   var payload = state.tasks.slice();
@@ -895,14 +904,14 @@ window.addEventListener("beforeunload", function() {
   flushAllNotes();
   saveLocal();
   if (state.cloudUrl && navigator.sendBeacon) {
-    var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp));
+    if (_cloudLoadDone) { var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp)); }
   }
 });
 document.addEventListener("visibilitychange", function() {
   if (document.visibilityState === "hidden") {
     flushAllNotes();
     saveLocal();
-    if (state.cloudUrl) cloudSave();
+    if (state.cloudUrl && _cloudLoadDone) cloudSave();
   }
 });
 
