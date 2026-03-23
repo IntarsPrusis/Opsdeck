@@ -890,16 +890,24 @@ function cloudSave() {
 }
 
 function testCloudConnection(url, callback) {
-  fetch(url)
+  var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = setTimeout(function() {
+    if (ctrl) ctrl.abort();
+    callback(false, "Connection timed out. Check your URL.");
+  }, 10000);
+  fetch(url, { redirect: "follow", signal: ctrl ? ctrl.signal : undefined })
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      clearTimeout(timer);
       if (Array.isArray(data)) {
-        callback(true, "Connected! Found " + data.length + " tasks in cloud.");
+        callback(true, "Connected! Found " + data.filter(function(d){return !d._type;}).length + " tasks.");
       } else {
-        callback(true, "Connected! Cloud is ready.");
+        callback(true, "Connected!");
       }
     })
     .catch(function(e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') return;
       callback(false, "Could not connect: " + e.message);
     });
 }
@@ -1102,6 +1110,10 @@ function renderMobileBar() {
       label +
     '</button>';
   });
+  html += '<button class="mobile-nav" onclick="toggleTheme()">' +
+    '<span class="mob-icon">' + (state.darkMode ? icon('sun', 18) : icon('moon', 18)) + '</span>' +
+    (state.darkMode ? 'Light' : 'Dark') +
+  '</button>';
   html += '<button class="mobile-nav" onclick="toggleSettings()">' +
     '<span class="mob-icon">' + icon('gear', 18) + '</span>More' +
   '</button>';
