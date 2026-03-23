@@ -822,27 +822,14 @@ function cloudLoad() {
           return true;
         });
         if (cloudNotes !== null) {
-          // MERGE: never overwrite local notes that have text with empty cloud notes
+          // Cloud is source of truth — only preserve local text for notes that exist in cloud
           var localMap = {};
           state.quickNotes.forEach(function(n) { localMap[n.id] = n; });
-          var cloudMap = {};
-          cloudNotes.forEach(function(n) { cloudMap[n.id] = n; });
-          // Start with cloud notes, but preserve local text if cloud is empty
-          var merged = [];
           cloudNotes.forEach(function(cn) {
             var local = localMap[cn.id];
-            if (local && local.text && !cn.text) {
-              merged.push(local); // keep local version — it has text, cloud doesn't
-            } else {
-              merged.push(cn);
-            }
-            delete localMap[cn.id];
+            if (local && local.text && !cn.text) cn.text = local.text;
           });
-          // Add any local-only notes (not yet in cloud)
-          Object.keys(localMap).forEach(function(id) {
-            merged.push(localMap[id]);
-          });
-          state.quickNotes = merged;
+          state.quickNotes = cloudNotes;
           Notes.saveLocal();
         }
         sortTasks();
@@ -1977,18 +1964,15 @@ setInterval(function() {
       });
       // Capture textarea text again (user may have typed during fetch)
       Notes.captureAll();
-      // Merge notes: cloud structure wins, but keep local text if cloud text is empty
+      // Notes: cloud is source of truth — same as tasks
       if (cloudNotes !== null) {
         var localMap = {};
         state.quickNotes.forEach(function(n) { localMap[n.id] = n; });
-        var merged = [];
         cloudNotes.forEach(function(cn) {
           var local = localMap[cn.id];
-          merged.push(local && local.text && !cn.text ? local : cn);
-          delete localMap[cn.id];
+          if (local && local.text && !cn.text) cn.text = local.text;
         });
-        Object.keys(localMap).forEach(function(id) { merged.push(localMap[id]); });
-        state.quickNotes = merged;
+        state.quickNotes = cloudNotes;
         Notes.saveLocal();
       }
       // Tasks: cloud is source of truth — always accept
