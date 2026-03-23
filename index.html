@@ -639,6 +639,7 @@ var LOGO_SVG = '<svg width="30" height="30" viewBox="0 0 30 30" fill="none">' +
 '</svg>';
 
 const STORAGE_KEY = "pgm-task-dashboard-v1";
+const PROJECTS_KEY = "taskado-projects-v1";
 const CLOUD_URL_KEY = "opsdeck-cloud-url";
 const PRIORITIES = {
   high:   { label: "High",   color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "#f87171" },
@@ -689,6 +690,7 @@ function fetchMetalPricesFromCloud() {
 
 let state = {
   tasks: [],
+  projects: [],
   filter: "all",
   prioFilter: "all",
   showAdd: false,
@@ -709,6 +711,7 @@ let state = {
 
 var TABS = [
   { id: "tasks", iconName: "tasks", label: "Tasks", ready: true },
+  { id: "projects", iconName: "clipboard", label: "Projects", ready: true },
   { id: "analysis", iconName: "chart", label: "Analysis", ready: false, desc: "Track performance metrics, completion rates, and team productivity.", features: ["Task completion trends", "Team workload overview", "Deadline hit rate", "Priority distribution"] },
   { id: "price-offers", iconName: "tag", label: "Price Offers", ready: false, desc: "Create, manage, and track price quotations for clients.", features: ["Generate offer documents", "Track offer statuses", "Client history", "Approval workflow"] },
   { id: "orders", iconName: "box", label: "Order Follow-up", ready: false, desc: "Monitor order progress from placement through delivery.", features: ["Order status tracking", "Supplier communication log", "Delivery timeline", "Issue flagging"] },
@@ -724,11 +727,35 @@ function fmtDate(d) {
 /* ——— SORTING: Priority (high first), then creation date (newest first) ——— */
 const PRIO_WEIGHT = { high: 0, medium: 1, low: 2 };
 function sortTasks() {
-  state.tasks.sort(function(a, b) {
+  var sorter = function(a, b) {
     var pa = PRIO_WEIGHT[a.priority] !== undefined ? PRIO_WEIGHT[a.priority] : 1;
     var pb = PRIO_WEIGHT[b.priority] !== undefined ? PRIO_WEIGHT[b.priority] : 1;
     if (pa !== pb) return pa - pb;
-    // Same priority — newest first
+    if (a.createdDate > b.createdDate) return -1;
+    if (a.createdDate < b.createdDate) return 1;
+    return 0;
+  };
+  state.tasks.sort(sorter);
+  state.projects.sort(sorter);
+}
+
+/* ——— LIST HELPERS — work on tasks or projects depending on active tab ——— */
+function getList() {
+  return state.activeTab === "projects" ? state.projects : state.tasks;
+}
+function setList(arr) {
+  if (state.activeTab === "projects") state.projects = arr;
+  else state.tasks = arr;
+}
+function findItem(id) {
+  return getList().find(function(x) { return x.id === id; });
+}
+function sortList() {
+  var list = getList();
+  list.sort(function(a, b) {
+    var pa = PRIO_WEIGHT[a.priority] !== undefined ? PRIO_WEIGHT[a.priority] : 1;
+    var pb = PRIO_WEIGHT[b.priority] !== undefined ? PRIO_WEIGHT[b.priority] : 1;
+    if (pa !== pb) return pa - pb;
     if (a.createdDate > b.createdDate) return -1;
     if (a.createdDate < b.createdDate) return 1;
     return 0;
@@ -746,6 +773,8 @@ function load() {
   try {
     var d = localStorage.getItem(STORAGE_KEY);
     if (d) state.tasks = JSON.parse(d);
+    var p = localStorage.getItem(PROJECTS_KEY);
+    if (p) state.projects = JSON.parse(p);
     sortTasks();
   } catch (e) { console.error("Local load failed:", e); }
   // Then try cloud
@@ -760,6 +789,7 @@ function saveLocal() {
   try {
     sortTasks();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(state.projects));
   } catch {}
 }
 
@@ -814,10 +844,15 @@ function cloudLoad() {
       if (Array.isArray(data) && data.length > 0) {
         // Extract embedded quick notes if present
         var cloudNotes = null;
+        var cloudProjects = null;
         state.tasks = data.filter(function(item) {
           if (item && item._type === "quickNotes") { cloudNotes = item.notes || []; return false; }
+          if (item && item._type === "projects") { cloudProjects = item.items || []; return false; }
           return true;
         });
+        if (cloudProjects !== null) {
+          state.projects = cloudProjects;
+        }
         if (cloudNotes !== null) {
           // Cloud is source of truth — only preserve local text for notes that exist in cloud
           var localMap = {};
@@ -859,6 +894,7 @@ function cloudSave() {
   updateSyncUI();
   var payload = state.tasks.slice();
   payload.push({ _type: "quickNotes", notes: state.quickNotes || [] });
+  payload.push({ _type: "projects", items: state.projects || [] });
   fetch(state.cloudUrl, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -905,7 +941,7 @@ window.addEventListener("beforeunload", function() {
   Notes.saveLocal();
   saveLocal();
   if (state.cloudUrl && navigator.sendBeacon) {
-    if (_cloudLoadDone) { Notes.captureAll(); var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp)); }
+    if (_cloudLoadDone) { Notes.captureAll(); var bp = state.tasks.slice(); bp.push({_type:'quickNotes',notes:state.quickNotes||[]}); bp.push({_type:'projects',items:state.projects||[]}); navigator.sendBeacon(state.cloudUrl, JSON.stringify(bp)); }
   }
 });
 document.addEventListener("visibilitychange", function() {
@@ -961,7 +997,8 @@ function subtaskReminderText(s) {
 function render(force) {
   // Always capture note text before DOM rebuild
   Notes.captureAll();
-  const tasks = state.tasks.filter(function(t) {
+  var list = getList();
+  const tasks = list.filter(function(t) {
     if (state.filter === "active" && t.completed) return false;
     if (state.filter === "completed" && !t.completed) return false;
     if (state.filter === "dueSoon" && !taskHasReminder(t)) return false;
@@ -973,11 +1010,11 @@ function render(force) {
     return true;
   });
   const stats = {
-    total: state.tasks.length,
-    active: state.tasks.filter(function(t){ return !t.completed; }).length,
-    completed: state.tasks.filter(function(t){ return t.completed; }).length,
-    overdue: state.tasks.filter(function(t){ return !t.completed && t.subtasks.some(function(s){ return !s.completed && s.deadline && new Date(s.deadline) < new Date(todayStr()); }); }).length,
-    dueSoon: state.tasks.filter(function(t){ return taskHasReminder(t); }).length,
+    total: list.length,
+    active: list.filter(function(t){ return !t.completed; }).length,
+    completed: list.filter(function(t){ return t.completed; }).length,
+    overdue: list.filter(function(t){ return !t.completed && t.subtasks.some(function(s){ return !s.completed && s.deadline && new Date(s.deadline) < new Date(todayStr()); }); }).length,
+    dueSoon: list.filter(function(t){ return taskHasReminder(t); }).length,
   };
 
   document.getElementById("app").innerHTML =
@@ -991,7 +1028,7 @@ function render(force) {
           '<span class="mob-date">' + icon('calendar',11) + ' ' + new Date().toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) + '</span>' +
         '</div>' +
         '<div class="container">' +
-          (state.activeTab === "tasks" ? renderTasksTab(tasks, stats) : renderComingSoon()) +
+          (state.activeTab === "tasks" || state.activeTab === "projects" ? renderTasksTab(tasks, stats) : renderComingSoon()) +
         '</div>' +
       '</div>' +
     '</div>' +
@@ -1044,6 +1081,7 @@ function renderSidebarMetals() {
 
 function renderSidebar() {
   var taskCount = state.tasks.filter(function(t){ return !t.completed; }).length;
+  var projCount = state.projects.filter(function(t){ return !t.completed; }).length;
   var dateStr = new Date().toLocaleDateString("en-GB", {weekday:"short", day:"2-digit", month:"short", year:"numeric"});
   var html = '<nav class="sidebar">' +
     '<div class="sidebar-brand" id="syncStatus">' +
@@ -1065,6 +1103,7 @@ function renderSidebar() {
       '<span class="nav-icon">' + icon(tab.iconName, 16) + '</span>' +
       tab.label +
       (tab.id === "tasks" && taskCount > 0 ? '<span class="nav-badge">' + taskCount + '</span>' : '') +
+      (tab.id === "projects" && projCount > 0 ? '<span class="nav-badge">' + projCount + '</span>' : '') +
       (!tab.ready ? '<span class="nav-soon">Soon</span>' : '') +
     '</button>';
   });
@@ -1511,7 +1550,7 @@ function cancelEditNotes() {
 }
 
 function saveWorkNotes(taskId, subId) {
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   var s = t.subtasks.find(function(x){ return x.id === subId; });
   if (!s) return;
@@ -1530,7 +1569,7 @@ function addFileLink(taskId, subId) {
   if (!/^https?:\/\//.test(url)) url = 'https://' + url;
   var name = nameEl ? nameEl.value.trim() : '';
 
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   var s = t.subtasks.find(function(x){ return x.id === subId; });
   if (!s) return;
@@ -1540,7 +1579,7 @@ function addFileLink(taskId, subId) {
 }
 
 function removeFileLink(taskId, subId, idx) {
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   var s = t.subtasks.find(function(x){ return x.id === subId; });
   if (!s || !s.links) return;
@@ -1664,7 +1703,7 @@ var Notes = {
     Notes.captureAll();
     var note = state.quickNotes.find(function(n) { return n.id === id; });
     if (!note || !note.text.trim()) { alert("Type something first"); return; }
-    state.tasks.push({
+    getList().push({
       id: genId(), description: note.text.trim(), priority: "medium",
       createdDate: todayStr(), endDate: null, completed: false, subtasks: []
     });
@@ -1738,26 +1777,26 @@ function addTask() {
   var desc = document.getElementById("newTaskDesc");
   var prio = document.getElementById("newTaskPrio");
   if (!desc || !desc.value.trim()) return;
-  state.tasks.unshift({ id: genId(), description: desc.value.trim(), priority: prio ? prio.value : "medium", createdDate: todayStr(), endDate: null, completed: false, subtasks: [] });
+  getList().unshift({ id: genId(), description: desc.value.trim(), priority: prio ? prio.value : "medium", createdDate: todayStr(), endDate: null, completed: false, subtasks: [] });
   state.showAdd = false;
   save(); render();
 }
 
 function deleteTask(id) {
   if (!confirm("Delete this task?")) return;
-  state.tasks = state.tasks.filter(function(t){ return t.id !== id; });
+  setList(getList().filter(function(t){ return t.id !== id; }));
   save(); render();
 }
 
 function cyclePriority(id) {
-  var t = state.tasks.find(function(x){ return x.id === id; });
+  var t = findItem(id);
   if (!t) return;
   t.priority = PRIO_ORDER[(PRIO_ORDER.indexOf(t.priority)+1) % 3];
   save(); render();
 }
 
 function startEditTitle(id) {
-  var t = state.tasks.find(function(x){ return x.id === id; });
+  var t = findItem(id);
   if (!t) return;
   var curr = document.querySelector('.task-card .task-title[ondblclick*="' + id + '"]');
   if (!curr) return;
@@ -1774,7 +1813,7 @@ function startEditTitle(id) {
 }
 
 function toggleSub(taskId, subId) {
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   var s = t.subtasks.find(function(x){ return x.id === subId; });
   if (!s) return;
@@ -1792,7 +1831,7 @@ function recalcTask(t) {
 
 function startEditSub(subId) { state.editingSubtask = subId; render(); }
 function saveEditSub(taskId, subId) {
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   var s = t.subtasks.find(function(x){ return x.id === subId; });
   if (!s) return;
@@ -1821,7 +1860,7 @@ function saveEditSub(taskId, subId) {
 }
 
 function deleteSub(taskId, subId) {
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   t.subtasks = t.subtasks.filter(function(s){ return s.id !== subId; });
   recalcTask(t);
@@ -1835,7 +1874,7 @@ function addSubtask(taskId) {
   if (!descEl || !descEl.value.trim()) return;
   var deadEl = document.getElementById("newSubDead");
   var agentEl = document.getElementById("newSubAgent");
-  var t = state.tasks.find(function(x){ return x.id === taskId; });
+  var t = findItem(taskId);
   if (!t) return;
   var agentVal = agentEl ? agentEl.value.trim().toUpperCase().slice(0,3) : null;
   t.subtasks.push({ id: genId(), description: descEl.value.trim(), agent: agentVal || null, deadline: deadEl ? (deadEl.value || null) : null, deadlineHistory: [], workNotes: '', links: [], completed: false, completedDate: null });
@@ -1847,7 +1886,7 @@ function addSubtask(taskId) {
 
 function exportCsv() {
   var csv = "Task,Priority,Status,Created,End Date,Subtask,Agent,Subtask Deadline,Subtask Completed\n";
-  state.tasks.forEach(function(t) {
+  getList().forEach(function(t) {
     if (t.subtasks.length === 0) {
       csv += '"' + t.description + '",' + t.priority + ',' + (t.completed?"Done":"Active") + ',' + t.createdDate + ',' + (t.endDate||"") + ',,,,\n';
     } else {
@@ -1902,7 +1941,8 @@ function importFromParsed(lines) {
   }
   var tasks = Object.values(taskMap);
   if (tasks.length === 0) throw new Error("No tasks found in CSV.");
-  state.tasks = tasks.concat(state.tasks);
+  if (state.activeTab === 'projects') state.projects = tasks.concat(state.projects);
+  else state.tasks = tasks.concat(state.tasks);
   state.showImport = false;
   save(); render();
 }
@@ -1946,10 +1986,15 @@ function refreshFromCloud() {
     .then(function(data) {
       if (!Array.isArray(data)) return;
       var cloudNotes = null;
+      var cloudProjects = null;
       var cloudTasks = data.filter(function(item) {
         if (item && item._type === "quickNotes") { cloudNotes = item.notes || []; return false; }
+        if (item && item._type === "projects") { cloudProjects = item.items || []; return false; }
         return true;
       });
+      if (cloudProjects !== null) {
+        state.projects = cloudProjects;
+      }
       if (cloudNotes !== null) {
         state.quickNotes = cloudNotes;
         Notes.saveLocal();
