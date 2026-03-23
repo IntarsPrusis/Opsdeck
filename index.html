@@ -177,7 +177,8 @@
   .settings-steps a { color: var(--accent); text-decoration: none; }
   .settings-steps a:hover { text-decoration: underline; }
 
-  .stats { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; align-items: flex-end; }
+  .stats-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+  .stats { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-end; }
   .stat { display: flex; flex-direction: column; align-items: center; min-width: 48px; }
   .stat-val { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; line-height: 1.2; }
   .stat-label { font-size: 11px; color: var(--t3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; }
@@ -186,10 +187,10 @@
 
   .container { max-width: 1400px; padding: 0 32px; }
 
-  .filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; padding-top: 20px; }
-  .filter-label { font-size: 11px; color: var(--t3); font-weight: 600; margin-right: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .filter-label.ml { margin-left: 16px; }
-  .filter-btn { padding: 5px 14px; border-radius: 100px; border: none; background: var(--surface-sec); color: var(--t2); font-size: 13px; font-weight: 500; cursor: pointer; text-transform: capitalize; transition: all 0.15s; }
+  .filters { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-size: 10px; color: var(--t3); font-weight: 600; margin-right: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .filter-label.ml { margin-left: 10px; }
+  .filter-btn { padding: 4px 10px; border-radius: 100px; border: none; background: var(--surface-sec); color: var(--t2); font-size: 11px; font-weight: 500; cursor: pointer; text-transform: capitalize; transition: all 0.15s; }
   .filter-btn:hover { background: rgba(0,0,0,0.06); }
   .filter-btn.active { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
   .filter-btn.active-high { background: var(--red-bg); color: var(--red); font-weight: 600; }
@@ -211,6 +212,7 @@
   .task-card.done { opacity: 0.55; }
   .task-header { display: flex; align-items: center; gap: 12px; padding: 16px 18px; cursor: pointer; user-select: none; transition: background 0.1s; }
   .task-header:hover { background: rgba(255,255,255,0.02); }
+  .task-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; margin-left: auto; }
   .arrow { font-size: 10px; color: var(--t3); flex-shrink: 0; transition: transform 0.2s; display: inline-block; }
   .arrow.open { transform: rotate(90deg); }
   .task-info { flex: 1; min-width: 0; }
@@ -262,6 +264,7 @@
 
   /* Row 1: checkbox + title + delete */
   .sub-main { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px 0 14px; }
+  .sub-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; margin-left: auto; }
   .checkbox { width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; border: 1.5px solid rgba(0,0,0,0.15); background: transparent; margin-top: 1px; }
   .checkbox:hover { border-color: var(--accent); }
   .checkbox.checked { border: none; background: linear-gradient(135deg, #a78bfa, #7c3aed); }
@@ -424,6 +427,7 @@
   .sub-card.compact .sub-main { padding: 7px 10px 7px 10px; align-items: center; }
   .sub-card.compact .sub-title { font-size: 13px; }
   .sub-card.compact .sub-meta,
+  .sub-card.compact .sub-badges,
   .sub-card.compact .sub-expand-row,
   .sub-card.compact .sub-detail-body { display: none; }
   .sub-card.compact .sub-compact-info { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
@@ -434,6 +438,54 @@
   .sub-compact-dot.overdue { background: var(--red); }
   .sub-compact-dot.done { background: var(--green); }
   .sub-compact-date { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--t3); white-space: nowrap; }
+
+
+  /* ——— STICKY NOTES PANEL ——— */
+  .app-layout { display: flex; gap: 20px; min-height: calc(100vh - 100px); }
+  .app-main { flex: 1; min-width: 0; }
+  .notes-panel { width: 280px; flex-shrink: 0; padding: 0 0 16px 20px; position: sticky; top: 100px; max-height: calc(100vh - 110px); overflow-y: auto; align-self: flex-start; border-left: 1px solid var(--border); }
+  .notes-panel::-webkit-scrollbar { width: 3px; }
+  .notes-panel::-webkit-scrollbar-thumb { background: var(--border-s); border-radius: 3px; }
+  .notes-panel-inner { background: var(--task-bg); border: 1px solid var(--task-border); border-radius: var(--r); padding: 14px; margin-top: 16px; }
+  .notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .notes-title { font-size: 12px; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: 0.8px; display: flex; align-items: center; gap: 5px; }
+  .notes-count { font-size: 10px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
+  .note-add-btn { background: none; border: 1px dashed var(--border-s); border-radius: var(--r-sm); padding: 10px; width: 100%; font-size: 12px; color: var(--t3); cursor: pointer; transition: all 0.15s; text-align: left; font-family: inherit; margin-bottom: 8px; }
+  .note-add-btn:hover { border-color: var(--accent); color: var(--accent); border-style: solid; }
+  .note-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px; margin-bottom: 6px; position: relative; transition: all 0.15s; }
+  .note-card:hover { border-color: var(--border-s); background: rgba(255,255,255,0.05); }
+  .note-text { width: 100%; background: none; border: none; color: var(--t1); font-size: 12px; font-family: 'Inter', sans-serif; line-height: 1.5; resize: none; outline: none; min-height: 36px; }
+  .note-text::placeholder { color: var(--t3); }
+  .note-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+  .note-time { font-size: 9px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
+  .note-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  .note-card:hover .note-actions { opacity: 1; }
+  .note-act-btn { background: none; border: none; cursor: pointer; color: var(--t3); padding: 2px; transition: color 0.15s; display: inline-flex; }
+  .note-act-btn:hover { color: var(--accent); }
+  .note-act-btn.del:hover { color: var(--red); }
+  .note-to-task { font-size: 9px; color: var(--accent); background: var(--accent-bg); border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-weight: 600; font-family: inherit; transition: all 0.15s; }
+  .note-to-task:hover { background: rgba(167,139,250,0.2); }
+  .note-empty { font-size: 11px; color: var(--t3); text-align: center; padding: 20px 0; font-style: italic; }
+  [data-theme="light"] .notes-panel-inner { background: #fff; }
+  [data-theme="light"] .note-card { background: var(--bg); }
+  [data-theme="light"] .note-card:hover { background: rgba(0,0,0,0.02); }
+  [data-theme="light"] .note-text { color: var(--t1); }
+
+  /* Mobile: floating button + drawer */
+  .notes-fab { display: none; position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #a78bfa, #7c3aed); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(139,92,246,0.4); z-index: 200; align-items: center; justify-content: center; transition: transform 0.2s; }
+  .notes-fab:active { transform: scale(0.92); }
+  .notes-fab-count { position: absolute; top: -2px; right: -2px; background: var(--red); color: #fff; font-size: 9px; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; }
+  .notes-drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 250; }
+  .notes-drawer { position: fixed; bottom: 0; left: 0; right: 0; max-height: 75vh; background: var(--task-bg); border-radius: 16px 16px 0 0; z-index: 300; padding: 16px 16px 24px; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s ease; }
+  .notes-drawer.open { transform: translateY(0); }
+  .notes-drawer-handle { width: 36px; height: 4px; background: var(--border-s); border-radius: 2px; margin: 0 auto 14px; }
+  [data-theme="light"] .notes-fab { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+  [data-theme="light"] .notes-drawer { background: #fff; }
+
+  @media (max-width: 1100px) {
+    .notes-panel { display: none; }
+    .notes-fab { display: flex; }
+  }
 
   /* ——— RESPONSIVE: Tablet ——— */
   @media (max-width: 900px) {
@@ -462,16 +514,17 @@
 
     .container { padding: 0 12px; }
     .stats { gap: 12px; margin-top: 12px; }
+    .stats-row { gap: 10px; }
+    .filters { gap: 3px; }
+    .filter-btn { padding: 3px 8px; font-size: 10px; }
+    .filter-label { font-size: 9px; }
+    .filter-label.ml { margin-left: 6px; }
+    .task-badges { gap: 4px; }
     .metal-strip { gap: 10px; padding: 8px 10px; margin-top: 12px; }
     .metal-price { font-size: 13px; }
     .metal-label { font-size: 8px; }
     .stat-val { font-size: 18px; }
     .stat-label { font-size: 9px; }
-
-    .filters { gap: 4px; padding-top: 12px; }
-    .filter-btn { padding: 4px 10px; font-size: 11px; }
-    .filter-label { font-size: 10px; }
-    .filter-label.ml { margin-left: 8px; }
 
     .task-list { gap: 8px; padding: 12px 0 30px; }
     .task-header { padding: 12px 12px; gap: 8px; }
@@ -486,6 +539,7 @@
     .subtasks-panel { padding: 10px 10px 12px 10px; }
     .subtasks-label { font-size: 9px; margin-bottom: 8px; }
     .sub-main { padding: 10px 10px 0 10px; gap: 8px; }
+    .sub-badges { gap: 3px; }
     .sub-card.compact .sub-main { padding: 6px 8px; }
     .sub-title { font-size: 13px; }
     .sub-meta { padding: 5px 10px 0 38px; gap: 4px; }
@@ -646,6 +700,8 @@ let state = {
   editingNotes: null,
   addingSubTo: null,
   compactSubtasks: {},
+  quickNotes: [],
+  notesDrawerOpen: false,
   activeTab: "tasks",
   darkMode: true,
   showSettings: false,
@@ -910,8 +966,16 @@ function render() {
 
     '<div class="container">' +
       renderMetalPrices() +
-      (state.activeTab === "tasks" ? renderTasksTab(tasks, stats) : renderComingSoon()) +
+      '<div class="app-layout">' +
+        '<div class="app-main">' +
+          (state.activeTab === "tasks" ? renderTasksTab(tasks, stats) : renderComingSoon()) +
+        '</div>' +
+        renderNotesPanel() +
+      '</div>' +
     '</div>' +
+
+    renderNotesFab() +
+    renderNotesDrawer() +
 
     (state.showImport ? renderImportModal() : "") +
     (state.showSettings ? renderSettingsModal() : "");
@@ -919,6 +983,7 @@ function render() {
   if (state.showAdd) setTimeout(function(){ var el = document.getElementById("newTaskDesc"); if (el) el.focus(); }, 50);
   setTimeout(flashSaveIndicator, 20);
   setTimeout(updateSyncUI, 30);
+  setTimeout(function(){ document.querySelectorAll('.note-text').forEach(autoResizeNote); }, 40);
 }
 
 function renderTabBar() {
@@ -980,20 +1045,21 @@ function renderMetalPrices() {
 }
 
 function renderTasksTab(tasks, stats) {
-  return '<div class="stats">' +
+  return '<div class="stats-row">' +
+        '<div class="stats">' +
           '<div class="stat"><span class="stat-val" style="color:var(--t1)">' + stats.total + '</span><span class="stat-label">Total</span></div>' +
           '<div class="stat stat-sm"><span class="stat-val" style="color:var(--blue)">' + stats.active + '</span><span class="stat-label">Active</span></div>' +
           '<div class="stat stat-sm"><span class="stat-val" style="color:var(--green)">' + stats.completed + '</span><span class="stat-label">Done</span></div>' +
           '<div class="stat stat-sm"><span class="stat-val" style="color:var(--red)">' + stats.dueSoon + '</span><span class="stat-label">Due Soon</span></div>' +
           '<div class="stat stat-sm"><span class="stat-val" style="color:var(--warn)">' + stats.overdue + '</span><span class="stat-label">Overdue</span></div>' +
         '</div>' +
-
-      '<div class="filters">' +
-        '<span class="filter-label">STATUS</span>' +
-        ["all","active","completed"].map(function(f){ return '<button class="filter-btn ' + (state.filter===f?'active':'') + '" onclick="setFilter(\'' + f + '\')">' + f + '</button>'; }).join("") +
-        '<span class="filter-label ml">PRIORITY</span>' +
-        '<button class="filter-btn ' + (state.prioFilter==='all'?'active':'') + '" onclick="setPrioFilter(\'all\')">All</button>' +
-        Object.keys(PRIORITIES).map(function(k){ return '<button class="filter-btn ' + (state.prioFilter===k?'active-'+k:'') + '" onclick="setPrioFilter(\'' + k + '\')">' + PRIORITIES[k].label + '</button>'; }).join("") +
+        '<div class="filters">' +
+          '<span class="filter-label">STATUS</span>' +
+          ["all","active","completed"].map(function(f){ return '<button class="filter-btn ' + (state.filter===f?'active':'') + '" onclick="setFilter(\'' + f + '\')">' + f + '</button>'; }).join("") +
+          '<span class="filter-label ml">PRIORITY</span>' +
+          '<button class="filter-btn ' + (state.prioFilter==='all'?'active':'') + '" onclick="setPrioFilter(\'all\')">All</button>' +
+          Object.keys(PRIORITIES).map(function(k){ return '<button class="filter-btn ' + (state.prioFilter===k?'active-'+k:'') + '" onclick="setPrioFilter(\'' + k + '\')">' + PRIORITIES[k].label + '</button>'; }).join("") +
+        '</div>' +
       '</div>' +
 
       (state.showAdd ?
@@ -1052,11 +1118,7 @@ function renderTask(t) {
       '<div class="task-info">' +
         '<div class="task-title-row">' +
           '<span class="task-title ' + (isDone?'done':'') + '" ondblclick="event.stopPropagation();startEditTitle(\'' + t.id + '\')">' + esc(t.description) + '</span>' +
-          '<span class="prio-badge ' + t.priority + '" onclick="event.stopPropagation();cyclePriority(\'' + t.id + '\')">' +
-            '<span class="prio-dot ' + t.priority + '"></span>' + PRIORITIES[t.priority].label +
-          '</span>' +
           (isDone ? '<span class="completed-badge">COMPLETED</span>' : '') +
-          (hasReminder ? '<span class="reminder-badge">' + icon('clock',12) + ' DUE SOON</span>' : '') +
         '</div>' +
         '<div class="task-meta">' +
           '<span>Created ' + fmtDate(t.createdDate) + '</span>' +
@@ -1067,6 +1129,12 @@ function renderTask(t) {
           '<div class="progress-bar"><div class="progress-fill ' + pClass + '" style="width:' + pct + '%"></div></div>' +
           '<span class="progress-pct ' + pClass + '">' + pct + '%</span>' +
         '</div>' +
+      '</div>' +
+      '<div class="task-badges">' +
+        '<span class="prio-badge ' + t.priority + '" onclick="event.stopPropagation();cyclePriority(\'' + t.id + '\')">' +
+          '<span class="prio-dot ' + t.priority + '"></span>' + PRIORITIES[t.priority].label +
+        '</span>' +
+        (hasReminder ? '<span class="reminder-badge">' + icon('clock',12) + ' DUE SOON</span>' : '') +
       '</div>' +
       '<button class="btn-delete-task" onclick="event.stopPropagation();deleteTask(\'' + t.id + '\')" title="Delete task">' + icon('close',14) + '</button>' +
     '</div>' +
@@ -1118,6 +1186,15 @@ function renderSubtasks(t) {
       (s.completed ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
     '</button>';
     html += '<span class="sub-title ' + (s.completed?'done':'') + '" onclick="startEditSub(\'' + s.id + '\')">' + esc(s.description) + '</span>';
+    // Right side: deadline + reminder badges
+    html += '<div class="sub-badges">';
+    if (s.deadline && !s.completed) {
+      html += '<span class="sub-deadline ' + (isOverdue?'overdue':'') + '">' +
+        (isOverdue ? icon('warn',11)+' ' : icon('calendar',11)+' ') + fmtDate(s.deadline) + '</span>';
+    }
+    if (reminder) html += '<span class="sub-reminder">' + icon('clock',11) + ' ' + reminder + '</span>';
+    if (s.completed && s.completedDate) html += '<span class="sub-completed-chip">' + icon('check',11) + ' ' + fmtDate(s.completedDate) + '</span>';
+    html += '</div>';
     html += '<button class="btn-delete-sub" onclick="deleteSub(\'' + t.id + '\',\'' + s.id + '\')" title="Delete subtask">' + icon('close',12) + '</button>';
     // Compact-mode inline info
     var cDot = s.completed ? 'done' : (isOverdue ? 'overdue' : (reminder ? 'warn' : 'ok'));
@@ -1129,14 +1206,9 @@ function renderSubtasks(t) {
     html += '</span>';
     html += '</div>';
 
-    // ROW 2: Meta chips (agent, deadline, reminder, status)
+    // ROW 2: Meta chips (agent, history)
     html += '<div class="sub-meta">';
     if (s.agent) html += '<span class="agent-badge">' + esc(s.agent) + '</span>';
-    if (s.deadline) {
-      html += '<span class="sub-deadline ' + (isOverdue?'overdue':'') + '">' +
-        (isOverdue ? icon('warn',11)+' ' : icon('calendar',11)+' ') + fmtDate(s.deadline) + '</span>';
-    }
-    if (reminder) html += '<span class="sub-reminder">' + icon('clock',11) + ' ' + reminder + '</span>';
     if (history.length > 0) {
       html += '<span class="deadline-history">';
       history.forEach(function(h) {
@@ -1146,7 +1218,6 @@ function renderSubtasks(t) {
       if (!isLocked) html += '<span class="deadline-changes-left">' + changesLeft + '/3</span>';
       else html += '<span class="deadline-locked">' + icon('lock',11) + '</span>';
     }
-    if (s.completed && s.completedDate) html += '<span class="sub-completed-chip">' + icon('check',11) + ' ' + fmtDate(s.completedDate) + '</span>';
     html += '</div>';
 
     // ROW 3: Expand button (replaces preview strip)
@@ -1426,6 +1497,115 @@ function toggleTheme() {
   render();
 }
 
+
+/* ——— QUICK NOTES ——— */
+var NOTES_KEY = "taskado-quick-notes";
+
+function loadNotes() {
+  try {
+    var raw = localStorage.getItem(NOTES_KEY);
+    state.quickNotes = raw ? JSON.parse(raw) : [];
+  } catch(e) { state.quickNotes = []; }
+}
+function saveNotes() {
+  try { localStorage.setItem(NOTES_KEY, JSON.stringify(state.quickNotes)); } catch(e) {}
+}
+function addQuickNote() {
+  state.quickNotes.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    text: "",
+    created: new Date().toISOString()
+  });
+  saveNotes();
+  render();
+  // Focus the new note
+  setTimeout(function(){
+    var el = document.getElementById("qn-" + state.quickNotes[0].id);
+    if (el) el.focus();
+  }, 50);
+}
+function updateNote(id) {
+  var el = document.getElementById("qn-" + id);
+  if (!el) return;
+  var note = state.quickNotes.find(function(n){ return n.id === id; });
+  if (note) {
+    note.text = el.value;
+    saveNotes();
+  }
+}
+function deleteNote(id) {
+  state.quickNotes = state.quickNotes.filter(function(n){ return n.id !== id; });
+  saveNotes();
+  render();
+}
+function noteToTask(id) {
+  var note = state.quickNotes.find(function(n){ return n.id === id; });
+  if (!note || !note.text.trim()) return;
+  state.tasks.push({
+    id: genId(),
+    description: note.text.trim(),
+    priority: "medium",
+    createdDate: todayStr(),
+    endDate: null,
+    completed: false,
+    subtasks: []
+  });
+  deleteNote(id);
+  save();
+  render();
+}
+function toggleNotesDrawer() {
+  state.notesDrawerOpen = !state.notesDrawerOpen;
+  render();
+}
+function autoResizeNote(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+function renderNotesContent() {
+  var notes = state.quickNotes;
+  var html = '<div class="notes-header">' +
+    '<span class="notes-title">' + icon('note',12) + ' Quick Notes <span class="notes-count">' + notes.length + '</span></span>' +
+  '</div>' +
+  '<button class="note-add-btn" onclick="addQuickNote()">+ Jot something down...</button>';
+  if (notes.length === 0) {
+    html += '<div class="note-empty">No notes yet.<br>Quick-capture ideas here.</div>';
+  }
+  notes.forEach(function(n) {
+    var d = new Date(n.created);
+    var timeStr = d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}) + " " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+    html += '<div class="note-card">' +
+      '<textarea class="note-text" id="qn-' + n.id + '" placeholder="Type a note..." oninput="updateNote(\'' + n.id + '\');autoResizeNote(this)">' + esc(n.text) + '</textarea>' +
+      '<div class="note-footer">' +
+        '<span class="note-time">' + timeStr + '</span>' +
+        '<div class="note-actions">' +
+          (n.text.trim() ? '<button class="note-to-task" onclick="noteToTask(\'' + n.id + '\')" title="Convert to task">' + icon('plus',9) + ' Task</button>' : '') +
+          '<button class="note-act-btn del" onclick="deleteNote(\'' + n.id + '\')" title="Delete">' + icon('close',11) + '</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  return html;
+}
+function renderNotesPanel() {
+  return '<div class="notes-panel"><div class="notes-panel-inner">' + renderNotesContent() + '</div></div>';
+}
+function renderNotesFab() {
+  var count = state.quickNotes.length;
+  return '<button class="notes-fab" onclick="toggleNotesDrawer()">' +
+    icon('note', 22) +
+    (count > 0 ? '<span class="notes-fab-count">' + count + '</span>' : '') +
+  '</button>';
+}
+function renderNotesDrawer() {
+  if (!state.notesDrawerOpen) return '';
+  return '<div class="notes-drawer-overlay" onclick="toggleNotesDrawer()"></div>' +
+    '<div class="notes-drawer open">' +
+      '<div class="notes-drawer-handle"></div>' +
+      renderNotesContent() +
+    '</div>';
+}
+
 function toggleCompact(taskId) {
   state.compactSubtasks[taskId] = !state.compactSubtasks[taskId];
   render();
@@ -1641,6 +1821,7 @@ function fetchSheet() {
 
 /* ——— INIT ——— */
 loadTheme();
+loadNotes();
 load();
 render();
 fetchMetalPricesFromCloud();
