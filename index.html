@@ -971,14 +971,10 @@ function subtaskReminderText(s) {
 /* ——— RENDER ——— */
 var _forceRender = false;
 function render(force) {
-  // Don't rebuild DOM while user is typing in a note (background renders from sync/fetch)
   if (_noteTyping && !force && !_forceRender) {
-    flushAllNotes(); // still save text
-    return;
+    return; // Don't rebuild DOM while typing
   }
   _forceRender = false;
-  // Save any in-progress note text before rebuilding DOM
-  if (typeof flushAllNotes === 'function') flushAllNotes();
   const tasks = state.tasks.filter(function(t) {
     if (state.filter === "active" && t.completed) return false;
     if (state.filter === "completed" && !t.completed) return false;
@@ -1605,7 +1601,12 @@ function saveNotes() {
   try { localStorage.setItem(NOTES_KEY, JSON.stringify(state.quickNotes)); } catch(e) {}
 }
 function addQuickNote() {
-  flushAllNotes();
+  // Read all existing textareas BEFORE modifying state
+  state.quickNotes.forEach(function(n) {
+    var el = document.getElementById("qn-" + n.id);
+    if (el) n.text = el.value;
+  });
+  // Now add new empty note
   state.quickNotes.unshift({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
     text: "",
@@ -1684,17 +1685,27 @@ function flushAllNotes() {
 }
 function deleteNote(id) {
   _noteTyping = false;
+  // Save text of other notes before removing this one
+  state.quickNotes.forEach(function(n) {
+    if (n.id !== id) {
+      var el = document.getElementById("qn-" + n.id);
+      if (el) n.text = el.value;
+    }
+  });
   state.quickNotes = state.quickNotes.filter(function(n){ return n.id !== id; });
   saveNotes();
-  if (state.cloudUrl) cloudSave();
+  if (state.cloudUrl && _cloudLoadDone) cloudSave();
   render(true);
 }
 function noteToTask(id) {
   _noteTyping = false;
-  var el = document.getElementById("qn-" + id);
+  // Save all note texts first
+  state.quickNotes.forEach(function(n) {
+    var el = document.getElementById("qn-" + n.id);
+    if (el) n.text = el.value;
+  });
   var note = state.quickNotes.find(function(n){ return n.id === id; });
   if (!note) return;
-  if (el) note.text = el.value;
   if (!note.text.trim()) { alert("Type something first"); return; }
   state.tasks.push({
     id: genId(),
@@ -1730,24 +1741,13 @@ function syncNotesNow() {
 }
 function toggleNotesDrawer() {
   if (state.notesDrawerOpen) {
-    flushAllNotes();
+    // Closing — save all note text and sync
+    state.quickNotes.forEach(function(n) {
+      var el = document.getElementById("qn-" + n.id);
+      if (el) n.text = el.value;
+    });
+    saveNotes();
     if (state.cloudUrl && _cloudLoadDone) cloudSave();
-  } else {
-    // Opening drawer — refresh from cloud first
-    if (state.cloudUrl && _cloudLoadDone) {
-      fetch(state.cloudUrl).then(function(r){return r.json();}).then(function(data){
-        if (Array.isArray(data) && data.length > 0) {
-          var cn = null;
-          state.tasks = data.filter(function(item) {
-            if (item && item._type === "quickNotes") { cn = item.notes || []; return false; }
-            return true;
-          });
-          if (cn !== null) { state.quickNotes = cn; saveNotes(); }
-          sortTasks(); saveLocal();
-        }
-        render(true);
-      }).catch(function(){});
-    }
   }
   _noteTyping = false;
   state.notesDrawerOpen = !state.notesDrawerOpen;
