@@ -296,6 +296,10 @@
   .metal-src:hover { color: var(--accent); opacity: 1; }
   .metal-hint { font-size: 11px; color: var(--t3); font-style: italic; }
   .metal-err { color: var(--red); }
+  .metal-pct { font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+  .metal-pct.up { color: var(--red); background: var(--red-bg); }
+  .metal-pct.down { color: var(--green); background: var(--green-bg); }
+  .metal-prev-date { font-size: 9px; color: var(--t3); font-family: 'JetBrains Mono', monospace; opacity: 0.5; }
   [data-theme="light"] .metal-strip { background: rgba(124,58,237,0.04); border-color: rgba(124,58,237,0.1); }
 
   /* Row 3: expand/collapse button */
@@ -598,6 +602,7 @@ var METAL_PRICES = {
     { name: "Copper", usd: 0, symbol: "Cu", eur: 0 },
     { name: "Aluminium", usd: 0, symbol: "Al", eur: 0 },
   ],
+  previous: null,
   source: "https://www.westmetall.com/en/markdaten.php",
   loaded: false,
   error: false
@@ -616,6 +621,7 @@ function fetchMetalPricesFromCloud() {
         METAL_PRICES.date = data.date || "Today";
         METAL_PRICES.eurUsd = data.eurUsd;
         METAL_PRICES.metals = data.metals;
+        METAL_PRICES.previous = data.previous || null;
         METAL_PRICES.loaded = true;
         METAL_PRICES.error = false;
       }
@@ -944,14 +950,29 @@ function renderMetalPrices() {
   } else if (p.error) {
     html += '<span class="metal-hint metal-err">Could not load prices</span>';
   } else {
-    p.metals.forEach(function(m) {
+    p.metals.forEach(function(m, idx) {
       var eur = m.eur || Math.round(m.usd / p.eurUsd);
       html += '<span class="metal-item">';
       html += '<span class="metal-symbol">' + m.symbol + '</span>';
       html += '<span class="metal-price">\u20AC' + eur.toLocaleString('de-DE') + '</span>';
       html += '<span class="metal-unit">/t</span>';
+      // % change from previous
+      if (p.previous && p.previous.metals && p.previous.metals[idx]) {
+        var prevEur = p.previous.metals[idx].eur;
+        if (prevEur && prevEur > 0) {
+          var pctChange = ((eur - prevEur) / prevEur * 100).toFixed(1);
+          var isUp = eur > prevEur;
+          var isDown = eur < prevEur;
+          var cls = isUp ? 'metal-pct up' : (isDown ? 'metal-pct down' : 'metal-pct');
+          var arrow = isUp ? '\u25B2' : (isDown ? '\u25BC' : '');
+          html += '<span class="' + cls + '">' + arrow + ' ' + (isUp ? '+' : '') + pctChange + '%</span>';
+        }
+      }
       html += '</span>';
     });
+    if (p.previous && p.previous.date) {
+      html += '<span class="metal-prev-date">vs ' + p.previous.date + '</span>';
+    }
   }
   html += '<a class="metal-src" href="' + p.source + '" target="_blank" rel="noopener">' + p.date + '</a>';
   html += '</div>';
