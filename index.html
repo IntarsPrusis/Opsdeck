@@ -69,9 +69,10 @@ input, select, textarea, button { font-family: inherit; }
 .main-area { flex: 1; margin-left: 200px; min-width: 0; min-height: 100vh; padding: 20px 24px; }
 
 /* Sidebar */
-.sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 0 14px 14px; --sync-bg: var(--accent-bg); --sync-fg: var(--t3); transition: all 0.3s; }
+.sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 0 14px 14px; --sync-bg: rgba(120,120,120,0.1); --sync-fg: #6a6a6a; transition: all 0.3s; }
 .sidebar-brand.connected { --sync-bg: rgba(45,180,150,0.12); --sync-fg: var(--accent); }
-.sidebar-brand.syncing { --sync-bg: rgba(45,180,150,0.15); --sync-fg: var(--accent); animation: pulse-sync 1.2s ease-in-out infinite; }
+.sidebar-brand.syncing { --sync-bg: rgba(90,140,220,0.15); --sync-fg: #5a8cdc; }
+.sidebar-brand.syncing svg { animation: pulse-sync 1.2s ease-in-out infinite; }
 .sidebar-brand.error { --sync-bg: rgba(216,90,55,0.12); --sync-fg: var(--persimmon); }
 @keyframes pulse-sync { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
 .sidebar-brand h1 { font-size: 14px; font-weight: 600; letter-spacing: -0.3px; }
@@ -87,8 +88,8 @@ input, select, textarea, button { font-family: inherit; }
 .sb-metal-sym { font-size: 9px; font-weight: 600; color: var(--accent); min-width: 16px; }
 .sb-metal-val { font-size: 11px; font-weight: 500; color: var(--t1); }
 .sb-pct { font-size: 8px; font-weight: 500; padding: 1px 4px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; }
-.sb-pct.up { color: var(--persimmon); background: var(--persimmon-bg); }
-.sb-pct.down { color: var(--accent); background: var(--accent-bg); }
+.sb-pct.up { color: var(--accent); background: var(--accent-bg); }
+.sb-pct.down { color: var(--persimmon); background: var(--persimmon-bg); }
 .sb-metals-vs { font-size: 8px; color: var(--t3); margin-top: 3px; }
 .sb-metals-hint { font-size: 10px; color: var(--t3); padding: 2px 0; font-style: italic; }
 
@@ -107,9 +108,10 @@ input, select, textarea, button { font-family: inherit; }
 
 /* Mobile */
 .mobile-top-bar { display: none; align-items: center; gap: 10px; padding: 14px 14px 0; }
-.mob-sync-logo { display: flex; --sync-bg: var(--accent-bg); --sync-fg: var(--t3); transition: all 0.3s; }
+.mob-sync-logo { display: flex; --sync-bg: rgba(120,120,120,0.1); --sync-fg: #6a6a6a; transition: all 0.3s; }
 .mob-sync-logo.connected { --sync-bg: rgba(45,180,150,0.12); --sync-fg: var(--accent); }
-.mob-sync-logo.syncing { --sync-bg: rgba(45,180,150,0.15); --sync-fg: var(--accent); animation: pulse-sync 1.2s ease-in-out infinite; }
+.mob-sync-logo.syncing { --sync-bg: rgba(90,140,220,0.15); --sync-fg: #5a8cdc; }
+.mob-sync-logo.syncing svg { animation: pulse-sync 1.2s ease-in-out infinite; }
 .mob-sync-logo.error { --sync-bg: rgba(216,90,55,0.12); --sync-fg: var(--persimmon); }
 .mobile-top-bar .mob-brand { font-size: 16px; font-weight: 600; margin-right: auto; }
 .mobile-top-bar .mob-date { font-size: 10px; color: var(--t3); font-family: 'JetBrains Mono', monospace; }
@@ -839,12 +841,16 @@ function renderTicketsTab(focusItems, upNext, done) {
       var pct = t.subtasks.length === 0 ? 0 : Math.round(t.subtasks.filter(function(s) { return s.completed; }).length / t.subtasks.length * 100);
       var color = t._daysLeft <= 0 ? "var(--persimmon)" : "var(--gold)";
       var dl = t._daysLeft;
-      h += '<div class="focus-card" onclick="toggleExpand(\'' + t.id + '\')">' +
+      var expanded = state.expandedTasks[t.id];
+      h += '<div class="' + (expanded ? 'ticket-expanded' : '') + '" style="' + (expanded ? '' : 'margin-bottom:8px') + '">' +
+        '<div class="focus-card" onclick="toggleExpand(\'' + t.id + '\')" style="' + (expanded ? 'border-radius:14px 14px 0 0;margin-bottom:0' : '') + '">' +
         '<div><div class="focus-days" style="color:' + color + '">' + (dl <= 0 ? "0" : dl) + 'd</div><div class="focus-days-label" style="color:' + color + '">' + (dl <= 0 ? "overdue" : "left") + '</div></div>' +
         '<div class="focus-info"><div class="focus-title">' + esc(t.description) + '</div>' +
         '<div class="focus-meta"><span style="color:var(--accent)">' + t._ticketId + '</span><span class="sep">\u00b7</span>' +
         '<span>' + t.subtasks.filter(function(s){return s.completed;}).length + ' of ' + t.subtasks.length + ' done</span></div></div>' +
-        '<div class="focus-ring">' + progressRingSVG(pct, color, 48) + '<div class="focus-ring-text" style="color:' + color + '">' + pct + '%</div></div></div>';
+        '<div class="focus-ring">' + progressRingSVG(pct, color, 48) + '<div class="focus-ring-text" style="color:' + color + '">' + pct + '%</div></div></div>' +
+        (expanded ? renderSubtasks(t) : '') +
+      '</div>';
     });
     h += '</div><div class="sec-divider"></div>';
   }
