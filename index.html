@@ -238,10 +238,7 @@ input, select, textarea, button { font-family: inherit; }
 .deadline-prev { font-size: 9px; color: var(--t3); text-decoration: line-through; font-family: 'JetBrains Mono', monospace; opacity: 0.6; }
 
 /* Work notes */
-.work-notes-area { width: 100%; min-height: 80px; padding: 10px; border-radius: 10px; border: 1px solid var(--border-s); font-size: 13px; line-height: 1.6; resize: vertical; outline: none; background: rgba(255,255,255,0.02); color: var(--t1); }
-.work-notes-area:focus { border-color: var(--accent); }
-.work-notes-display { font-size: 12px; color: var(--t2); line-height: 1.7; padding: 10px; background: rgba(255,255,255,0.015); border-radius: 10px; white-space: pre-wrap; }
-[data-theme="light"] .work-notes-display { background: rgba(0,0,0,0.02); }
+/* Work notes - removed, replaced by steps */
 .btn-save-notes { padding: 6px 14px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-size: 12px; cursor: pointer; font-weight: 500; }
 
 /* File links */
@@ -321,6 +318,32 @@ input, select, textarea, button { font-family: inherit; }
 .empty { padding: 60px 0; }
 .empty-title { font-size: 16px; font-weight: 500; margin-bottom: 4px; color: var(--t2); }
 .empty-desc { font-size: 14px; color: var(--t3); }
+
+/* Steps inside subtasks */
+.steps-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.step-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; background: rgba(255,255,255,0.015); border-radius: 8px; }
+[data-theme="light"] .step-item { background: rgba(0,0,0,0.02); }
+.step-item:hover { background: rgba(255,255,255,0.025); }
+[data-theme="light"] .step-item:hover { background: rgba(0,0,0,0.03); }
+.step-chk { width: 18px; height: 18px; border-radius: 6px; border: 2px solid var(--border-s); background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step-chk:hover { border-color: var(--accent); }
+.step-chk.on { background: var(--accent); border-color: transparent; }
+.step-text { font-size: 12px; color: var(--t1); flex: 1; }
+.step-text.struck { text-decoration: line-through; color: var(--t3); }
+.step-del { background: none; border: none; color: var(--t3); cursor: pointer; opacity: 0.15; font-size: 11px; }
+.step-del:hover { color: var(--persimmon); opacity: 1; }
+.add-step-row { display: flex; gap: 6px; margin-top: 6px; }
+.add-step-row input { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 11px; background: rgba(255,255,255,0.02); color: var(--t1); outline: none; }
+[data-theme="light"] .add-step-row input { background: rgba(0,0,0,0.02); }
+.add-step-row input:focus { border-color: var(--accent); }
+.add-step-btn { padding: 7px 10px; border-radius: 8px; border: none; background: var(--accent); color: #fff; font-size: 11px; cursor: pointer; font-weight: 500; }
+.sub-card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 8px; }
+[data-theme="light"] .sub-card { border: 1px solid var(--border); }
+.sub-card.done-sub { opacity: 0.4; }
+.step-count { font-size: 10px; color: var(--t3); font-family: 'JetBrains Mono', monospace; margin-left: auto; flex-shrink: 0; }
+.step-count.all-done { color: var(--accent); }
+.files-section { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.files-label { font-size: 10px; color: var(--t3); margin-bottom: 6px; font-weight: 500; }
 
 /* Compact toggle */
 .compact-toggle { font-size: 10px; color: var(--t3); cursor: pointer; background: rgba(255,255,255,0.02); border: 1px solid var(--border); padding: 3px 9px; border-radius: 7px; font-weight: 400; }
@@ -478,7 +501,6 @@ var state = {
   expandedTasks: {},
   editingSubtask: null,
   expandedSubtasks: {},
-  editingNotes: null,
   addingSubTo: null,
   compactSubtasks: {},
   activeTab: "tasks",
@@ -935,7 +957,6 @@ function renderSubtasks(t) {
   if (t.subtasks.length === 0) h += '<p style="font-size:12px;color:var(--t3);font-style:italic;margin-bottom:8px">No subtasks yet</p>';
 
   t.subtasks.forEach(function(s) {
-    var isOverdue = s.deadline && !s.completed && new Date(s.deadline) < new Date(today);
     var isEditing = state.editingSubtask === s.id;
     var reminder = subtaskReminderText(s);
     var history = s.deadlineHistory || [];
@@ -943,9 +964,13 @@ function renderSubtasks(t) {
     var isLocked = changesLeft <= 0;
     var isExpSub = state.expandedSubtasks[s.id];
     var links = s.links || [];
+    var steps = s.steps || [];
+    var stepsTotal = steps.length;
+    var stepsDone = steps.filter(function(st) { return st.done; }).length;
+    var allStepsDone = stepsTotal > 0 && stepsDone === stepsTotal;
 
     if (isEditing) {
-      h += '<div class="sub-item"><div class="edit-row">' +
+      h += '<div class="sub-card"><div class="edit-row">' +
         '<input type="text" id="editSubDesc_' + s.id + '" value="' + esc(s.description) + '" onkeydown="if(event.key===\'Enter\')saveEditSub(\'' + t.id + '\',\'' + s.id + '\')">' +
         '<input class="agent-input" type="text" id="editSubAgent_' + s.id + '" value="' + esc(s.agent||"") + '" maxlength="3" placeholder="AGT">' +
         '<input type="date" id="editSubDead_' + s.id + '" value="' + (s.deadline||"") + '"' + (isLocked ? ' disabled' : '') + '>' +
@@ -956,16 +981,27 @@ function renderSubtasks(t) {
     }
 
     if (isCompact) {
-      h += '<div class="sub-item" style="padding:6px 0">' +
-        '<button class="checkbox ' + (s.completed ? "checked" : "") + '" onclick="toggleSub(\'' + t.id + '\',\'' + s.id + '\')">' + (s.completed ? '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') + '</button>' +
-        '<div class="sub-info"><div class="sub-title ' + (s.completed ? "done" : "") + '" style="font-size:12px">' + esc(s.description) + '</div></div>' +
+      h += '<div class="sub-card" style="padding:10px 14px;margin-bottom:4px;display:flex;align-items:center;gap:10px">' +
+        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none">' +
+          (s.completed ? '<rect x="1" y="1" width="14" height="14" rx="5" fill="var(--accent)"/><path d="M4.5 8.5L7 11L11.5 5.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' :
+           '<rect x="1" y="1" width="14" height="14" rx="5" stroke="var(--t3)" stroke-width="1.5" fill="none"/>') +
+        '</svg>' +
+        '<span style="font-size:12px;' + (s.completed ? 'text-decoration:line-through;color:var(--t3)' : '') + '">' + esc(s.description) + '</span>' +
+        (stepsTotal > 0 ? '<span class="step-count' + (allStepsDone ? ' all-done' : '') + '">' + stepsDone + '/' + stepsTotal + '</span>' : '') +
       '</div>';
       return;
     }
 
-    h += '<div class="sub-item">' +
-      '<button class="checkbox ' + (s.completed ? "checked" : "") + '" onclick="toggleSub(\'' + t.id + '\',\'' + s.id + '\')">' + (s.completed ? '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') + '</button>' +
-      '<div class="sub-info"><div class="sub-title ' + (s.completed ? "done" : "") + '">' + esc(s.description) + '</div><div class="sub-meta">';
+    h += '<div class="sub-card' + (s.completed ? ' done-sub' : '') + '">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<svg width="16" height="16" viewBox="0 0 16 16" fill="none">' +
+          (s.completed ? '<rect x="1" y="1" width="14" height="14" rx="5" fill="var(--accent)"/><path d="M4.5 8.5L7 11L11.5 5.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' :
+           '<rect x="1" y="1" width="14" height="14" rx="5" stroke="var(--t3)" stroke-width="1.5" fill="none"/>') +
+        '</svg>' +
+        '<div class="sub-title' + (s.completed ? ' done' : '') + '" ondblclick="startEditSub(\'' + s.id + '\')">' + esc(s.description) + '</div>' +
+        (stepsTotal > 0 ? '<span class="step-count' + (allStepsDone ? ' all-done' : '') + '">' + stepsDone + '/' + stepsTotal + '</span>' : '') +
+      '</div>' +
+      '<div class="sub-meta" style="margin-top:6px;padding-left:26px">';
     if (s.agent) h += '<span class="chip chip-agent">' + esc(s.agent) + '</span>';
     if (s.deadline && !s.completed) h += '<span class="chip chip-date">' + fmtDate(s.deadline) + '</span>';
     if (reminder) h += '<span class="chip chip-warn">' + reminder + '</span>';
@@ -977,35 +1013,38 @@ function renderSubtasks(t) {
     }
     h += '</div>';
 
-    // Expand/collapse detail
-    var hasContent = s.workNotes || links.length > 0;
-    if (hasContent || !s.completed) {
-      if (isExpSub) {
-        h += '<div class="sub-detail">';
-        // Work notes
-        h += '<div><div class="dt-label">Notes</div>';
-        if (state.editingNotes === s.id) {
-          h += '<textarea class="work-notes-area" id="workNotes_' + s.id + '" placeholder="Write notes...">' + esc(s.workNotes || "") + '</textarea>' +
-            '<div style="margin-top:6px;display:flex;gap:6px"><button class="btn-save-notes" onclick="saveWorkNotes(\'' + t.id + '\',\'' + s.id + '\')">Save</button><button class="btn-outline" style="padding:5px 12px;font-size:11px" onclick="cancelEditNotes()">Cancel</button></div>';
-        } else {
-          if (s.workNotes) h += '<div class="dt-text">' + esc(s.workNotes) + '</div><button class="dt-edit" onclick="startEditNotes(\'' + s.id + '\')">Edit</button>';
-          else h += '<button class="dt-edit" onclick="startEditNotes(\'' + s.id + '\')">+ Add notes</button>';
-        }
-        h += '</div>';
-        // File links
-        h += '<div><div class="dt-label">Files</div>';
-        links.forEach(function(lk, idx) {
-          var dn = lk.name || lk.url.replace(/https?:\/\//, "").slice(0, 40);
-          h += '<div class="file-link-item"><a class="dt-file" href="' + esc(lk.url) + '" target="_blank" rel="noopener">' + icon("file", 10) + ' ' + esc(dn) + '</a><button class="file-link-remove" onclick="removeFileLink(\'' + t.id + '\',\'' + s.id + '\',' + idx + ')">\u00d7</button></div>';
-        });
-        h += '<div class="add-link-row"><input type="text" id="newLink_' + s.id + '" placeholder="Paste URL..." onkeydown="if(event.key===\'Enter\')addFileLink(\'' + t.id + '\',\'' + s.id + '\')"><button class="btn-add-link" onclick="addFileLink(\'' + t.id + '\',\'' + s.id + '\')">Add</button></div>';
-        h += '</div></div>';
-        h += '<button class="sub-toggle" onclick="toggleSubDetail(\'' + s.id + '\')"><span class="sub-arrow open"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Hide details</button>';
-      } else {
-        h += '<button class="sub-toggle" onclick="toggleSubDetail(\'' + s.id + '\')"><span class="sub-arrow"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Show details</button>';
-      }
+    // Expanded: show steps + files
+    if (isExpSub) {
+      // Steps (checkbox items)
+      h += '<div class="steps-list" style="margin-left:26px">';
+      steps.forEach(function(st, si) {
+        h += '<div class="step-item">' +
+          '<button class="step-chk' + (st.done ? ' on' : '') + '" onclick="toggleStep(\'' + t.id + '\',\'' + s.id + '\',' + si + ')">' +
+            (st.done ? '<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') +
+          '</button>' +
+          '<span class="step-text' + (st.done ? ' struck' : '') + '">' + esc(st.text) + '</span>' +
+          '<button class="step-del" onclick="deleteStep(\'' + t.id + '\',\'' + s.id + '\',' + si + ')">\u00d7</button>' +
+        '</div>';
+      });
+      h += '<div class="add-step-row"><input type="text" id="newStep_' + s.id + '" placeholder="Add a step..." onkeydown="if(event.key===\'Enter\')addStep(\'' + t.id + '\',\'' + s.id + '\')"><button class="add-step-btn" onclick="addStep(\'' + t.id + '\',\'' + s.id + '\')">Add</button></div>';
+      h += '</div>';
+
+      // Files
+      h += '<div class="files-section" style="margin-left:26px"><div class="files-label">Files</div>';
+      links.forEach(function(lk, idx) {
+        var dn = lk.name || lk.url.replace(/https?:\/\//, "").slice(0, 40);
+        h += '<div class="file-link-item"><a class="dt-file" href="' + esc(lk.url) + '" target="_blank" rel="noopener">' + icon("file", 10) + ' ' + esc(dn) + '</a><button class="file-link-remove" onclick="removeFileLink(\'' + t.id + '\',\'' + s.id + '\',' + idx + ')">\u00d7</button></div>';
+      });
+      h += '<div class="add-link-row"><input type="text" id="newLink_' + s.id + '" placeholder="Paste URL..." onkeydown="if(event.key===\'Enter\')addFileLink(\'' + t.id + '\',\'' + s.id + '\')"><button class="btn-add-link" onclick="addFileLink(\'' + t.id + '\',\'' + s.id + '\')">Add</button></div>';
+      h += '</div>';
+
+      h += '<button class="sub-toggle" style="margin-left:26px" onclick="toggleSubDetail(\'' + s.id + '\')"><span class="sub-arrow open"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Hide steps and files</button>';
+    } else if (!s.completed) {
+      h += '<button class="sub-toggle" style="margin-left:26px" onclick="toggleSubDetail(\'' + s.id + '\')"><span class="sub-arrow"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Show steps and files</button>';
     }
-    h += '</div><button class="sub-del" onclick="deleteSub(\'' + t.id + '\',\'' + s.id + '\')">\u00d7</button></div>';
+
+    h += '<button class="sub-del" style="position:relative;float:right;margin-top:-20px" onclick="deleteSub(\'' + t.id + '\',\'' + s.id + '\')">\u00d7</button>';
+    h += '</div>';
   });
 
   // Add subtask
@@ -1098,12 +1137,23 @@ function toggleSub(taskId, subId) {
   var t = findItem(taskId); if (!t) return;
   var s = t.subtasks.find(function(x) { return x.id === subId; }); if (!s) return;
   s.completed = !s.completed; s.completedDate = s.completed ? todayStr() : null;
+  // If manually uncompleted, uncheck all steps too
+  if (!s.completed && s.steps) s.steps.forEach(function(st) { st.done = false; });
+  // If manually completed, check all steps
+  if (s.completed && s.steps) s.steps.forEach(function(st) { st.done = true; });
   recalcTask(t); save(); render();
 }
 function recalcTask(t) {
   var allDone = t.subtasks.length > 0 && t.subtasks.every(function(s) { return s.completed; });
   t.completed = allDone;
   t.endDate = allDone ? t.subtasks.reduce(function(latest, s) { return (!latest || s.completedDate > latest) ? s.completedDate : latest; }, null) : null;
+}
+function recalcSubFromSteps(t, s) {
+  if (!s.steps || s.steps.length === 0) return;
+  var allDone = s.steps.every(function(st) { return st.done; });
+  if (allDone && !s.completed) { s.completed = true; s.completedDate = todayStr(); }
+  else if (!allDone && s.completed) { s.completed = false; s.completedDate = null; }
+  recalcTask(t);
 }
 function startEditSub(subId) { state.editingSubtask = subId; render(); }
 function saveEditSub(taskId, subId) {
@@ -1135,19 +1185,37 @@ function addSubtask(taskId) {
   var deadEl = document.getElementById("newSubDead");
   var agentEl = document.getElementById("newSubAgent");
   var t = findItem(taskId); if (!t) return;
-  t.subtasks.push({ id: genId(), description: descEl.value.trim(), agent: agentEl ? (agentEl.value.trim().toUpperCase().slice(0, 3) || null) : null, deadline: deadEl ? (deadEl.value || null) : null, deadlineHistory: [], workNotes: "", links: [], completed: false, completedDate: null });
+  t.subtasks.push({ id: genId(), description: descEl.value.trim(), agent: agentEl ? (agentEl.value.trim().toUpperCase().slice(0, 3) || null) : null, deadline: deadEl ? (deadEl.value || null) : null, deadlineHistory: [], steps: [], links: [], completed: false, completedDate: null });
   t.completed = false; t.endDate = null;
   state.addingSubTo = null; save(); render();
 }
 
 function toggleSubDetail(subId) { state.expandedSubtasks[subId] = !state.expandedSubtasks[subId]; render(); }
-function startEditNotes(subId) { state.editingNotes = subId; render(); setTimeout(function() { var el = document.getElementById("workNotes_" + subId); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 50); }
-function cancelEditNotes() { state.editingNotes = null; render(); }
-function saveWorkNotes(taskId, subId) {
+function addStep(taskId, subId) {
+  var el = document.getElementById("newStep_" + subId);
+  if (!el || !el.value.trim()) return;
   var t = findItem(taskId); if (!t) return;
   var s = t.subtasks.find(function(x) { return x.id === subId; }); if (!s) return;
-  var el = document.getElementById("workNotes_" + subId);
-  s.workNotes = el ? el.value : (s.workNotes || ""); state.editingNotes = null; save(); render();
+  if (!s.steps) s.steps = [];
+  s.steps.push({ text: el.value.trim(), done: false });
+  // If subtask was completed but we add a new unchecked step, uncomplete it
+  if (s.completed) { s.completed = false; s.completedDate = null; recalcTask(t); }
+  save(); render();
+  setTimeout(function() { var e = document.getElementById("newStep_" + subId); if (e) e.focus(); }, 50);
+}
+function toggleStep(taskId, subId, stepIdx) {
+  var t = findItem(taskId); if (!t) return;
+  var s = t.subtasks.find(function(x) { return x.id === subId; }); if (!s || !s.steps) return;
+  s.steps[stepIdx].done = !s.steps[stepIdx].done;
+  recalcSubFromSteps(t, s);
+  save(); render();
+}
+function deleteStep(taskId, subId, stepIdx) {
+  var t = findItem(taskId); if (!t) return;
+  var s = t.subtasks.find(function(x) { return x.id === subId; }); if (!s || !s.steps) return;
+  s.steps.splice(stepIdx, 1);
+  recalcSubFromSteps(t, s);
+  save(); render();
 }
 function addFileLink(taskId, subId) {
   var urlEl = document.getElementById("newLink_" + subId);
@@ -1226,7 +1294,7 @@ function importFromParsed(lines) {
       taskMap[name] = { id: genId(), description: name, priority: p.includes("high")?"high":p.includes("low")?"low":"medium", createdDate: todayStr(), endDate: null, completed: false, subtasks: [] };
     }
     if (subIdx !== -1 && row[subIdx]) {
-      taskMap[name].subtasks.push({ id: genId(), description: row[subIdx], agent: agentIdx !== -1 && row[agentIdx] ? row[agentIdx].trim().toUpperCase().slice(0,3) : null, deadline: deadIdx !== -1 && row[deadIdx] ? row[deadIdx] : null, deadlineHistory: [], workNotes: "", links: [], completed: false, completedDate: null });
+      taskMap[name].subtasks.push({ id: genId(), description: row[subIdx], agent: agentIdx !== -1 && row[agentIdx] ? row[agentIdx].trim().toUpperCase().slice(0,3) : null, deadline: deadIdx !== -1 && row[deadIdx] ? row[deadIdx] : null, deadlineHistory: [], steps: [], links: [], completed: false, completedDate: null });
     }
   }
   var tasks = Object.values(taskMap);
